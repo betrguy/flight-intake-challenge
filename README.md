@@ -155,7 +155,7 @@ npm install
 ```
 
 ### 3. Running Unit Tests
-Execute the entire 35-test automated suite via Vitest:
+Execute the entire 54-test automated suite via Vitest:
 ```bash
 # CI single-pass mode
 npm test -- --watch=false
@@ -190,3 +190,24 @@ npx firebase login
 npm run firebase:deploy
 # (runs 'ng build' followed by 'firebase deploy --only hosting')
 ```
+
+---
+
+## Suggested Next Steps & Production Evolution (Customer Journey Architecture)
+
+### 1. Context & Evaluation Trade-Off
+For this engineering challenge, **Email/Password authentication** was deliberately implemented to provide evaluators with zero-friction, deterministic access via pre-configured, verifiable test credentials (`reviewer@challenge.com`). This established a rigorous, testable route guard security boundary ([`authGuard`](src/app/core/guards/auth.guard.ts)) without requiring external email delivery infrastructure or multi-factor dependencies during evaluation.
+
+### 2. Real-World Customer Friction in Travel Intake
+In an enterprise airport-transfer, hospitality, or travel concierge pipeline, requiring end-travelers to register an account, set a password, and manage credentials creates unnecessary friction and sign-up abandonment. Customers already possess an existing reservation, itinerary reference, or booking ID; they expect a seamless, single-click intake experience to submit their flight arrival times.
+
+### 3. Passwordless Magic Links & Signed Tokens
+For true production deployment, we recommend evolving the authentication perimeter to a **passwordless customer journey**:
+- **Firebase Passwordless Email Links (`sendSignInLinkToEmail`):** When a booking confirmation is issued, the customer receives an automated prompt with an ephemeral, passwordless login link that establishes a valid Firebase session upon arrival.
+- **Cryptographically Signed HMAC Deep Links:** Alternatively, reservations can generate short-lived, pre-authenticated URLs containing a signed JWT or HMAC token (e.g. `/flight-entry?token=<hmac_signature>&bookingRef=<ref>`), enabling travelers to land directly on the pre-populated intake form without manual credential entry.
+
+### 4. Security & UX Benefits
+- **Eliminates Password Fatigue & Abandonment:** Travelers never experience forgotten password flows, account lockouts, or registration drops.
+- **Time-Bounded & Scoped Access:** Magic links and signed tokens can be strictly scoped to the specific booking lifecycle and expired immediately upon intake completion or flight arrival.
+- **Zero Compromise on Perimeter Defense:** Retains the architectural integrity of Angular's [`authGuard`](src/app/core/guards/auth.guard.ts) and the Data Boundary Vault, while aligning user experience with modern travel hospitality standards.
+
