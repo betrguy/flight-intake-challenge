@@ -10,7 +10,7 @@
   *(Alternative domain: [https://albert-flight-challenge.firebaseapp.com](https://albert-flight-challenge.firebaseapp.com))*
 
 ### Evaluator Test Credentials
-The authentication security perimeter restricts access to authorized evaluators. Use the following pre-configured credentials (or click the **Auto-fill** button directly on the login view):
+The authentication security perimeter restricts access to authorized evaluators. Use the following pre-configured credentials:
 
 | Parameter | Value |
 | :--- | :--- |
