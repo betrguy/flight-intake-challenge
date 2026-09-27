@@ -1,151 +1,158 @@
-# Monster App
+# Flight Information Intake System
 
-A modern, production-ready Angular application built with standalone components, strict TypeScript typing, SCSS styling, Vitest testing harness, and modular Firebase integration (Authentication & Hosting).
-
----
-
-## Architecture Overview
-
-- **Framework**: Angular (Latest Standalone Architecture, no `NgModule`)
-- **Language**: TypeScript with strict mode (`strict: true`, `strictTemplates: true`)
-- **Styling**: SCSS (Sass)
-- **State & Reactivity**: Angular Signals (`signal`, `computed`) & RxJS Observables
-- **Unit Testing**: Vitest test runner with JSDOM
-- **Backend & Cloud**: Firebase Modular SDK v12 (`firebase/app`, `firebase/auth`)
-- **Hosting & Deployment**: Firebase Hosting with SPA rewrite routing
-- **Tooling**: Angular CLI, Prettier, Firebase CLI (`firebase-tools`)
+> An enterprise-grade, production-ready Angular web application built with modern standalone architecture, strict TypeScript typing, reactive state machines, resilient HTTP communication, and modular Firebase integration.
 
 ---
 
-## Directory Structure
+## Live Demo & Reviewer Credentials
+
+- **Live Application URL**: [https://albert-flight-challenge.web.app](https://albert-flight-challenge.web.app)
+  *(Alternative domain: [https://albert-flight-challenge.firebaseapp.com](https://albert-flight-challenge.firebaseapp.com))*
+
+### Evaluator Test Credentials
+The authentication security perimeter restricts access to authorized evaluators. Use the following pre-configured credentials (or click the **Auto-fill** button directly on the login view):
+
+| Parameter | Value |
+| :--- | :--- |
+| **Email** | `reviewer@challenge.com` |
+| **Password** | `Challenge2026!` |
+| **Role** | Evaluator / Authorized Candidate |
+
+---
+
+## Architectural Highlights & Engineering Principles
+
+This application was engineered adhering to modern software engineering principles popularized by **Dave Farley** (*Modern Software Engineering*):
+
+### 1. Loose Coupling
+- Components never couple to external transport APIs or Firebase SDK internals directly.
+- The cloud backend and HTTP protocols are encapsulated behind abstract Angular injectable services:
+  - [`FlightService`](src/app/core/services/flight.service.ts) encapsulates endpoint URLs, candidate identifiers, and secret inspection token headers.
+  - [`FirebaseAuthService`](src/app/core/firebase/firebase-auth.service.ts) encapsulates Firebase authentication instances, reactive Angular Signals (`currentUser`, `isAuthenticated`), and session lifecycles.
+- Swapping the transport layer, data persistence, or authentication provider does not require modifying view components.
+
+### 2. Separation of Concerns
+- **Defensive Route Guard Boundary**: [`authGuard`](src/app/core/guards/auth.guard.ts) operates as a gatekeeper at router transitions, evaluating session validity and executing atomic redirects to `/login` via `UrlTree`.
+- **Authentication Presentation**: [`LoginComponent`](src/app/features/login/login.component.ts) manages credential capture, client-side format validation, transient UI loading states, and localized error banner feedback.
+- **Business Domain Workflow**: [`FlightFormComponent`](src/app/features/flight-form/flight-form.component.ts) handles customer flight registration, Party guest count enforcement, and post-submission lifecycle views.
+- **Contract & Domain Isolation**: Core contracts reside strictly in [`src/app/core/models/flight-info.model.ts`](src/app/core/models/flight-info.model.ts).
+
+### 3. Invariant Type Safety & "The Data Boundary Vault"
+- Full TypeScript compiler strictness (`strict: true`, `strictTemplates: true`, `noImplicitOverride: true`).
+- Presentation form controls can produce volatile DOM strings (e.g. numeric inputs returning string values, untrimmed whitespace). 
+- Prior to dispatching network requests, [`FlightFormComponent`](src/app/features/flight-form/flight-form.component.ts) acts as a sanitization vault:
+  - Prunes and trims strings (`airline`, `flightNumber`).
+  - Guarantees uppercase formatting on flight codes.
+  - Strictly casts `numOfGuests` to a numeric primitive (`Number(val)`).
+  - Normalizes empty/whitespace comments to `undefined`.
+- The outgoing payload strictly conforms to the invariant [`FlightInfoPayload`](src/app/core/models/flight-info.model.ts) domain contract.
+
+### 4. Fast Empirical Feedback (Automated Test Suite)
+- Built with **Vitest** and **JSDOM**, running an automated suite of **28 unit tests** in **~2.5 seconds**:
+  - `auth.guard.spec.ts`: Verifies route activation allowance and unauthorized redirection.
+  - `login.component.spec.ts`: Validates input validation, auth delegation, and route navigation.
+  - `flight-form.component.spec.ts`: Tests form validation rules, guest boundary bounds, submission locking, and success/error view rendering.
+  - `flight.service.spec.ts`: Utilizes `HttpTestingController` to verify HTTP verbs, headers (`candidate`, `token`), body payloads, and 4xx/5xx network error containment.
+  - `firebase-auth.service.spec.ts`: Verifies authentication session state signals and error handling.
+
+---
+
+## Prompt Audit Trail
+
+Every engineering requirement, architectural choice, and implementation decision has been recorded verbatim in:
+👉 **[`PROMPTS.md`](PROMPTS.md)**
+
+It documents:
+- **Phase 1**: Initial project setup, strict type checking, comprehensive `.gitignore`, Vitest harness, and modular Firebase initialization.
+- **Phase 2**: Flight domain contract, Base64 token header integration, and resilient HTTP data service with `catchError` containment.
+- **Phase 3**: Active Firebase project credentials, functional `authGuard` gatekeeper, and responsive `LoginComponent`.
+- **Phase 4**: Reactive flight intake form, Data Boundary Vault sanitization, and finite state machine (`IDLE` -> `SUBMITTING` -> `SUCCESS` | `ERROR`).
+- **Phase 5**: Documentation finalization, principles synthesis, and production deployment configuration.
+
+---
+
+## Project Structure
 
 ```text
 monster-dev/
-├── .vscode/                     # VS Code recommended configurations
-├── public/                      # Static assets and icons
-├── src/
-│   ├── app/
-│   │   ├── core/
-│   │   │   └── firebase/        # Firebase DI providers & authentication service
-│   │   │       ├── firebase-auth.service.spec.ts
-│   │   │       ├── firebase-auth.service.ts
-│   │   │       └── firebase.providers.ts
-│   │   ├── app.config.ts        # Application configuration & dependency providers
-│   │   ├── app.html             # Root component template
-│   │   ├── app.routes.ts        # Application route definitions
-│   │   ├── app.scss             # Root component styles
-│   │   ├── app.spec.ts          # Root component unit tests
-│   │   └── app.ts               # Root standalone component
-│   ├── environments/            # Typed environment configurations
-│   │   ├── environment.example.ts
-│   │   ├── environment.model.ts
-│   │   ├── environment.prod.ts
-│   │   └── environment.ts
-│   ├── index.html               # Main HTML entry point
-│   ├── main.ts                  # Application bootstrap entry point
-│   └── styles.scss              # Global application styles
-├── .firebaserc                  # Firebase project aliases
-├── .gitignore                   # Comprehensive enterprise Git ignore configuration
-├── angular.json                 # Angular workspace configuration
-├── firebase.json                # Firebase Hosting configuration & SPA rewrites
-├── package.json                 # Dependencies and npm script targets
-├── PROMPTS.md                   # Engineering prompts and architectural decisions log
-├── README.md                    # Project documentation
-└── tsconfig.json                # TypeScript strict configuration
+├── .firebaserc                          # Firebase project configuration (albert-flight-challenge)
+├── .gitignore                           # Enterprise git-ignore rules (excluding secrets & artifacts)
+├── angular.json                         # Build configurations & style budgets
+├── firebase.json                        # Firebase Hosting & SPA rewrite routing
+├── package.json                         # Dependencies & test/build scripts
+├── PROMPTS.md                           # Verbatim prompt log & architectural rationale
+├── README.md                            # Project documentation & review guide
+├── tsconfig.json                        # Strict TypeScript compiler options
+└── src/
+    ├── main.ts                          # Standalone application bootstrap
+    ├── styles.scss                      # Global styles
+    ├── environments/                    # Environment configurations
+    │   ├── environment.example.ts       # Public schema blueprint
+    │   ├── environment.model.ts         # Strongly-typed environment contract
+    │   ├── environment.prod.ts          # Active production config (git-ignored)
+    │   └── environment.ts               # Active local dev config (git-ignored)
+    └── app/
+        ├── app.config.ts                # Application providers (HttpClient, Router, Firebase)
+        ├── app.routes.ts                # Route definitions & security guard attachments
+        ├── core/
+        │   ├── firebase/                # Firebase DI tokens & authentication service
+        │   ├── guards/                  # Route guard security boundary (authGuard)
+        │   ├── models/                  # Domain contracts (FlightInfoPayload, SubmissionStatus)
+        │   └── services/                # Resilient HTTP data service (FlightService)
+        └── features/
+            ├── login/                   # Authentication view (LoginComponent)
+            └── flight-form/             # Flight intake form (FlightFormComponent)
 ```
 
 ---
 
-## Getting Started
+## Local Development & Testing Instructions
 
-### Prerequisites
+### 1. Prerequisites
+- **Node.js**: `v20.x` or `v24.x` (Engine tested on Node v24.14.0)
+- **npm**: `v10.x` or `v11.x`
 
-- **Node.js**: v18.19.0+ or v20+ / v22+
-- **npm**: v10+
+### 2. Setup
+Clone the repository and install dependencies:
+```bash
+git clone <repository-url>
+cd "monster dev"
+npm install
+```
 
-### Installation
+### 3. Running Unit Tests
+Execute the entire 28-test automated suite via Vitest:
+```bash
+# CI single-pass mode
+npm test -- --watch=false
 
-1. Clone repository:
-   ```bash
-   git clone <repository-url>
-   cd monster-dev
-   ```
+# Or via npm script alias
+npm run test:ci
+```
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+### 4. Local Development Server
+Launch the development server:
+```bash
+npm start
+# or
+npx ng serve
+```
+Navigate to `http://localhost:4200/`. The application will automatically reload upon code modification.
 
-3. Configure Environment Variables:
-   Copy the example environment template and populate your Firebase credentials:
-   ```bash
-   cp src/environments/environment.example.ts src/environments/environment.ts
-   cp src/environments/environment.example.ts src/environments/environment.prod.ts
-   ```
+### 5. Production Build
+Compile optimized production assets:
+```bash
+npm run build
+```
+Build output is emitted to `dist/monster-app/browser` with zero warnings and zero budget violations.
 
----
+### 6. Firebase Deployment
+To deploy the compiled application to Firebase Hosting:
+```bash
+# 1. Authenticate with Firebase (if not previously logged in on the machine)
+npx firebase login
 
-## Development & Build Commands
-
-- **Start Local Dev Server**:
-  ```bash
-  npm start
-  # or
-  npx ng serve
-  ```
-  Navigate to `http://localhost:4200/`. The application will automatically reload if you change any source files.
-
-- **Build for Production**:
-  ```bash
-  npm run build
-  ```
-  The production build artifacts will be stored in `dist/monster-app/browser`.
-
----
-
-## Testing
-
-Execute unit tests via Vitest:
-
-- **Run Tests in Watch Mode**:
-  ```bash
-  npm test
-  ```
-
-- **Run Single-Pass Tests (CI Mode)**:
-  ```bash
-  npm run test:ci
-  # or
-  npm test -- --watch=false
-  ```
-
----
-
-## Firebase Hosting & Deployment
-
-1. Login to Firebase CLI:
-   ```bash
-   npx firebase login
-   ```
-
-2. Deploy to Firebase Hosting:
-   ```bash
-   npm run firebase:deploy
-   ```
-
----
-
-## Test Credentials
-
-> [!NOTE]
-> The following credentials can be used for evaluation and automated integration testing.
-
-- **Email**: `test.user@monster.dev` (Placeholder)
-- **Password**: `TestPass123!` (Placeholder)
-- **Role**: `Standard User`
-
----
-
-## Live Demo Link
-
-- **Live URL**: `https://monster-app-dev.web.app` (Placeholder)
+# 2. Deploy to Firebase Hosting
+npm run firebase:deploy
+# (runs 'ng build' followed by 'firebase deploy --only hosting')
+```

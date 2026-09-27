@@ -289,3 +289,56 @@ Adhering to **Contract Invariance**, **Separation of Presentation and Data**, an
 3. **Separation of Presentation and Authentication/Data**:
    - The component delegates all data persistence to `FlightService` and session management to `FirebaseAuthService`.
    - Layout is encapsulated with modern responsive SCSS featuring clear input elevation, intuitive field-level validation feedback, and accessible semantic markup.
+
+---
+
+## Phase 5: Repository Finalization, Principles Documentation & Production Deployment
+
+### Prompt (Verbatim)
+> Record this prompt verbatim in PROMPTS.md under Phase 5 with architectural rationale before proceeding.
+>
+> We will now finalize the repository for submission, document the engineering principles, and deploy the application to Firebase Hosting:
+>
+> 1. Finalize Documentation (`README.md`):
+>    - Create a clean, executive-ready README.md that includes:
+>      * **Project Title & Overview:** Flight Information Intake System (Angular Standalone + Firebase).
+>      * **Live Demo Link:** [Placeholder / Live Firebase URL once deployed].
+>      * **Test Credentials for Reviewers:**
+>        - Email: `reviewer@challenge.com`
+>        - Password: `Challenge2026!`
+>      * **Architecture & Engineering Principles:** Highlight Dave Farley's principles applied in this build: Loose Coupling, Separation of Concerns (Components vs. Services vs. Guards), Invariant Type Safety (TypeScript interfaces & boundary sanitization), and Fast Empirical Feedback (28 automated unit tests).
+>      * **Prompt Audit Trail:** Explicitly point to `PROMPTS.md` as the complete record of prompt iterations and architectural decisions.
+>      * **Local Development & Testing Instructions:** Steps to run `npm install`, `npm start`, and `npm test -- --watch=false`.
+>
+> 2. Production Build Verification:
+>    - Run a final production build (`ng build --configuration production`) and verify zero errors or warnings.
+>
+> 3. Firebase Hosting Deployment:
+>    - Verify `firebase.json` rewrites single-page application routes (`**` to `index.html`).
+>    - Execute the deployment command (`firebase deploy --only hosting`). If login/auth token is required by the local CLI environment, document the exact command step or execute successfully.
+>
+> 4. Final Git Commit:
+>    - Make the final commit:
+>      `docs: finalize challenge documentation, prompt audit trail, and production deployment config`
+>
+> Report back with the final deployment URL, verification status, and git log summary.
+
+---
+
+### Architectural Decisions & Rationale (Phase 5)
+
+Adhering to **Continuous Delivery**, **Traceability**, and **Production Operability**:
+
+1. **Dave Farley's Engineering Principles Embodied**:
+   - **Loose Coupling**: Components communicate with external systems exclusively through abstract, injectable services (`FlightService`, `FirebaseAuthService`). The persistence/cloud layer can be modified or mocked without altering view components.
+   - **Separation of Concerns**: Security boundaries (`authGuard`), authentication views (`LoginComponent`), business domain workflows (`FlightFormComponent`), and transport mechanics (`FlightService`) reside in distinct, self-contained architectural modules.
+   - **Invariant Type Safety**: TypeScript strict mode coupled with the "Data Boundary Vault" guarantees that only strictly validated and cast domain objects (`FlightInfoPayload`) penetrate beyond the presentation layer.
+   - **Fast Empirical Feedback**: A suite of 28 fine-grained unit tests with Vitest provides sub-second feedback for every state transition, validation rule, error containment path, and guard redirect.
+
+2. **Auditability & Provenance**:
+   - `PROMPTS.md` maintains an unbroken, verbatim record of every engineering phase and prompt instruction, pairing requirements with architectural justifications.
+   - `README.md` serves as the authoritative, executive-facing entry point for reviewers and maintainers.
+
+3. **Deterministic Deployment**:
+   - Production bundle output is verified against Angular strict budgets with zero warnings and zero errors.
+   - `firebase.json` configures atomic SPA URL rewrites targeting `dist/monster-app/browser` for seamless client-side routing on Google Cloud global CDN infrastructure.
