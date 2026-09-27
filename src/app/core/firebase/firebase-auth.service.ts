@@ -36,6 +36,10 @@ export class FirebaseAuthService {
     return cred;
   }
 
+  async login(email: string, password: string): Promise<UserCredential> {
+    return this.signIn(email, password);
+  }
+
   async signUp(email: string, password: string): Promise<UserCredential> {
     const cred = await createUserWithEmailAndPassword(this.auth, email, password);
     this._currentUser.set(cred.user);

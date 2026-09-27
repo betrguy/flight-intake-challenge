@@ -127,3 +127,82 @@ Adhering to David Farley's principles from *Modern Software Engineering*—speci
      * Exact JSON request body serialization.
      * Boundary error containment and clean error emission on 4xx/5xx network failures.
    - This provides developers with instant, deterministic feedback, ensuring long-term maintainability and regression protection.
+
+---
+
+## Phase 3: Real Firebase Integration, Route Guard Security Boundary & Authentication View
+
+### Prompt (Verbatim)
+> Record this prompt verbatim in PROMPTS.md under Phase 3 with architectural rationale before proceeding.
+>
+> We will now integrate real Firebase credentials, implement the route guard security boundary, and build the login view adhering to the "Separation of Concerns" and "Defensive Gatekeeper" principles:
+>
+> 1. Environment Configuration:
+>    - Populate `src/environments/environment.ts` and `src/environments/environment.prod.ts` with the following active Firebase configuration:
+>      apiKey: "AIzaSyBLPQcOaMyuHluK5pVfezRJFgMyIKhoLew"
+>      authDomain: "albert-flight-challenge.firebaseapp.com"
+>      projectId: "albert-flight-challenge"
+>      storageBucket: "albert-flight-challenge.firebasestorage.app"
+>      messagingSenderId: "131582934771"
+>      appId: "1:131582934771:web:ee5d7e76d97e5f6e4a8186"
+>    - Confirm that both `environment.ts` and `environment.prod.ts` remain safely excluded by `.gitignore` so secrets are never pushed to GitHub. Update `environment.example.ts` with empty placeholder strings to serve as the committed public schema.
+>
+> 2. Route Guard Security Boundary (`src/app/core/guards/auth.guard.ts`):
+>    - Implement a functional route guard `authGuard` using Angular's `canActivateFn`.
+>    - Inspect the authentication state via `FirebaseAuthService`.
+>    - If authenticated, allow navigation (`true`).
+>    - If unauthenticated, redirect the user immediately to `/login` using Angular's `Router.createUrlTree(['/login'])`.
+>
+> 3. Authentication View (`src/app/features/login/login.component.ts`):
+>    - Create a standalone `LoginComponent` with an associated SCSS stylesheet and clean HTML template.
+>    - Implement a reactive login form with `email` and `password` fields and client-side validation (required, email format).
+>    - Display a clean message stating that access to the Flight Intake System is restricted to authorized candidates and evaluators.
+>    - Render a helpful notice detailing default evaluation credentials:
+>      * Email: `reviewer@challenge.com`
+>      * Password: `Challenge2026!`
+>    - Handle login states:
+>      * Disable submit button and show a loading spinner during authentication.
+>      * On success, navigate immediately to `/flight-entry`.
+>      * On failure (e.g., auth/invalid-credential), display a clear, user-friendly error banner without breaking the view.
+>
+> 4. Routing Setup (`src/app/app.routes.ts`):
+>    - `/login` maps to `LoginComponent`.
+>    - `/flight-entry` maps to `FlightFormComponent` (create a minimal placeholder if not yet present), strictly protected by `authGuard`.
+>    - Default route `''` redirects to `/flight-entry`.
+>    - Wildcard route `'**'` redirects to `/flight-entry`.
+>
+> 5. Automated Unit Tests:
+>    - In `src/app/core/guards/auth.guard.spec.ts`:
+>      * Test 1: Verify guard permits route activation when user is authenticated.
+>      * Test 2: Verify guard redirects to `/login` when user is unauthenticated.
+>    - In `src/app/features/login/login.component.spec.ts`:
+>      * Test 1: Verify form is invalid when inputs are empty.
+>      * Test 2: Verify calling submit invokes `FirebaseAuthService.login()`.
+>      * Test 3: Verify successful login redirects to `/flight-entry`.
+>
+> 6. Verification & Git:
+>    - Run `npm test -- --watch=false` to verify all tests pass.
+>    - Run `ng build` to confirm clean compilation.
+>    - Commit changes:
+>      `feat(auth): integrate firebase config, implement auth guard, login component, and tests`
+>
+> Report back with test results, build status, and git commit details.
+
+---
+
+### Architectural Decisions & Rationale (Phase 3)
+
+Adhering to the **Separation of Concerns** and **Defensive Gatekeeper** patterns:
+
+1. **Defensive Gatekeeper Architecture (`authGuard`)**:
+   - Security boundaries must reside outside view logic. By employing Angular's functional `CanActivateFn`, the route guard operates as a deterministic perimeter defense at the router transition lifecycle.
+   - When unauthorized access is detected, returning `router.createUrlTree(['/login'])` rather than a raw boolean or imperatively calling `router.navigate()` ensures atomic, cancellable URL transitions without route flickering or ghost history entries.
+
+2. **Decoupled Authentication View (`LoginComponent`)**:
+   - Presentation logic is strictly segregated from authentication mechanics: the component interacts solely with `FirebaseAuthService` via injected signals/observables.
+   - The reactive form (`ReactiveFormsModule`) enforces immediate client-side validation feedback prior to dispatching network requests, preventing avoidable cloud function or auth endpoint load.
+   - Transient UI states (loading spinner, submission disabled, error banners) are tracked explicitly, preventing duplicate submissions (idempotence) while providing clear cognitive feedback to reviewers.
+
+3. **Enterprise Secrets Hygiene**:
+   - Active Firebase configuration keys are isolated inside `src/environments/environment.ts` and `src/environments/environment.prod.ts`, which are strictly ignored by `.gitignore`.
+   - `src/environments/environment.example.ts` acts as the committed schema blueprint with sanitized empty placeholder strings, preventing secret leaks into version control repositories.
