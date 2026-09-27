@@ -206,3 +206,86 @@ Adhering to the **Separation of Concerns** and **Defensive Gatekeeper** patterns
 3. **Enterprise Secrets Hygiene**:
    - Active Firebase configuration keys are isolated inside `src/environments/environment.ts` and `src/environments/environment.prod.ts`, which are strictly ignored by `.gitignore`.
    - `src/environments/environment.example.ts` acts as the committed schema blueprint with sanitized empty placeholder strings, preventing secret leaks into version control repositories.
+
+---
+
+## Phase 4: Customer Flight Intake Form, Data Boundary Vault & Defensive UX State Machine
+
+### Prompt (Verbatim)
+> Record this prompt verbatim in PROMPTS.md under Phase 4 with architectural rationale before proceeding.
+>
+> Implement the customer flight intake form in `src/app/features/flight-form/flight-form.component.ts` (standalone) adhering to the "Contract Invariance", "Separation of Presentation and Data", and "Defensive UX State Machine" principles:
+>
+> 1. Form Model & Validation Rules:
+>    - Use Angular's `ReactiveFormsModule` (`FormBuilder` / `FormGroup`).
+>    - Fields and explicit validators:
+>      * `airline`: Validators.required, trimmed.
+>      * `arrivalDate`: Validators.required (HTML `<input type="date">`, ensuring valid ISO/Date format).
+>      * `arrivalTime`: Validators.required (HTML `<input type="time">`).
+>      * `flightNumber`: Validators.required, auto-uppercase transform or formatted display.
+>      * `numOfGuests`: Validators.required, Validators.min(1) (explicit integer validation).
+>      * `comments`: optional.
+>    - Show inline validation error messages under fields only when touched or dirty (e.g. "Airline is required", "Guests must be at least 1").
+>
+> 2. The "Data Boundary Vault" Transformation:
+>    - In `onSubmit()`, do NOT pass raw form values directly to the service.
+>    - Guarantee the shape and types of `FlightInfoPayload`:
+>      * Cast `numOfGuests` strictly via `Number(val)`.
+>      * Trim text fields (`airline`, `flightNumber`, `comments`).
+>      * Omit `comments` or pass `undefined` if empty/whitespace.
+>    - Hand the sanitized `FlightInfoPayload` to `FlightService.submitFlightInfo()`.
+>
+> 3. State Machine & Defensive Presentation UX:
+>    - Manage state via explicit `SubmissionStatus`: `'IDLE' | 'SUBMITTING' | 'SUCCESS' | 'ERROR'`.
+>    - When `'SUBMITTING'`:
+>      * Disable the submit button and all form controls.
+>      * Render an accessible loading spinner to prevent double submissions.
+>    - When `'SUCCESS'`:
+>      * Hide the intake form.
+>      * Render an unambiguous, reassuring completion view: "Flight Details Received! You're all done."
+>      * Provide two clear action buttons: "Submit Another Flight" (resets state to 'IDLE') and "Sign Out" (calls `FirebaseAuthService.logout()`).
+>    - When `'ERROR'`:
+>      * Render a prominent error banner: "Unable to submit flight details. Please verify your connection or try again."
+>      * Keep form values intact so the user does not lose their typed information.
+>      * Re-enable the submit button.
+>
+> 4. Layout & Header:
+>    - Include a professional app header displaying the authenticated user's email and a clean "Sign Out" button.
+>    - Style with responsive SCSS: clean cards, elevated inputs, legible typography, and clear visual hierarchy.
+>
+> 5. Automated Unit Tests (`src/app/features/flight-form/flight-form.component.spec.ts`):
+>    - Test 1: Verify form is invalid when required fields are empty.
+>    - Test 2: Verify `numOfGuests` validator rejects 0 or negative numbers.
+>    - Test 3: Verify submit button is disabled when form is invalid or when status is 'SUBMITTING'.
+>    - Test 4: Verify `onSubmit()` correctly casts `numOfGuests` to a number and passes the exact `FlightInfoPayload` contract to `FlightService`.
+>    - Test 5: Verify successful submission switches view to the success screen with "You're all done" messaging.
+>    - Test 6: Verify submission failure switches status to 'ERROR' and displays the error alert without clearing form inputs.
+>
+> 6. Verification & Git:
+>    - Run `npm test -- --watch=false` to verify all tests pass.
+>    - Run `ng build` to confirm production bundle compiles cleanly.
+>    - Commit the changes:
+>      `feat(form): implement reactive flight form with boundary validation, defensive ux states, and tests`
+>
+> Report back with test results, build confirmation, and git commit details.
+
+---
+
+### Architectural Decisions & Rationale (Phase 4)
+
+Adhering to **Contract Invariance**, **Separation of Presentation and Data**, and **Defensive UX State Machine** principles:
+
+1. **The "Data Boundary Vault" Transformation**:
+   - User input from DOM form controls is inherently volatile (stringified numbers, extraneous whitespace, null vs undefined variations).
+   - Rather than letting presentation anomalies cross the service boundary, the component acts as a sanitization vault: transforming and casting `numOfGuests` into strict numeric primitives (`Number(val)`), trimming strings, auto-casing flight identifiers, and pruning blank comments.
+   - This guarantees that outgoing payloads are 100% compliant with the `FlightInfoPayload` enterprise contract before invoking `FlightService`.
+
+2. **Defensive UX State Machine (`SubmissionStatus`)**:
+   - Instead of juggling disjoint boolean flags (`isLoading`, `hasError`, `isSuccess`), the component models its UI cycle using an explicit finite state machine: `'IDLE' | 'SUBMITTING' | 'SUCCESS' | 'ERROR'`.
+   - In `'SUBMITTING'`, form controls and submit actions are locked to enforce idempotency and prevent double submissions.
+   - In `'SUCCESS'`, form fields are safely unmounted, preventing accidental edits and presenting an unambiguous confirmation message with clear onward navigation paths.
+   - In `'ERROR'`, the form retains all previously entered data, mitigating cognitive frustration while offering retry capability.
+
+3. **Separation of Presentation and Authentication/Data**:
+   - The component delegates all data persistence to `FlightService` and session management to `FirebaseAuthService`.
+   - Layout is encapsulated with modern responsive SCSS featuring clear input elevation, intuitive field-level validation feedback, and accessible semantic markup.

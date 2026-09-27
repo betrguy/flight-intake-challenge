@@ -1,0 +1,172 @@
+<div class="flight-page">
+  <!-- Application Header -->
+  <header class="app-header">
+    <div class="header-content">
+      <div class="brand">
+        <span class="brand-icon">✈</span>
+        <span class="brand-title">Flight Intake System</span>
+      </div>
+      <div class="user-controls">
+        <span class="user-email" data-testid="user-email">
+          {{ authService.currentUser()?.email || 'reviewer@challenge.com' }}
+        </span>
+        <button type="button" class="btn-signout" (click)="onSignOut()" data-testid="sign-out-btn">
+          Sign Out
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    @if (status() === 'SUCCESS') {
+      <!-- Success State View -->
+      <section class="state-card success-card" data-testid="success-card">
+        <div class="success-icon-badge">✓</div>
+        <h2>Flight Details Received!</h2>
+        <p class="success-message">You're all done.</p>
+        <p class="success-subtext">Your arrival itinerary and passenger guest count have been securely registered.</p>
+
+        <div class="action-buttons">
+          <button type="button" class="btn-primary" (click)="resetForm()" data-testid="submit-another-btn">
+            Submit Another Flight
+          </button>
+          <button type="button" class="btn-secondary" (click)="onSignOut()" data-testid="success-signout-btn">
+            Sign Out
+          </button>
+        </div>
+      </section>
+    } @else {
+      <!-- Intake Form View -->
+      <section class="form-card">
+        <div class="card-header">
+          <h2>Register Flight Arrival</h2>
+          <p class="subtitle">Please provide your flight details and traveling party count.</p>
+        </div>
+
+        @if (status() === 'ERROR') {
+          <div class="alert-error" role="alert" aria-live="assertive" data-testid="error-alert">
+            <span class="alert-icon">⚠</span>
+            <div class="alert-content">
+              <strong>Submission Error:</strong>
+              <span>{{ errorMessage() || 'Unable to submit flight details. Please verify your connection or try again.' }}</span>
+            </div>
+          </div>
+        }
+
+        <form [formGroup]="flightForm" (ngSubmit)="onSubmit()" novalidate class="intake-form">
+          <div class="form-row grid-2">
+            <!-- Airline -->
+            <div class="form-group">
+              <label for="airline">Airline <span class="required">*</span></label>
+              <input
+                id="airline"
+                type="text"
+                formControlName="airline"
+                placeholder="e.g. Delta, United, American Airlines"
+                [class.input-invalid]="flightForm.get('airline')?.invalid && (flightForm.get('airline')?.touched || flightForm.get('airline')?.dirty)"
+              />
+              @if (flightForm.get('airline')?.invalid && (flightForm.get('airline')?.touched || flightForm.get('airline')?.dirty)) {
+                <span class="field-error" data-testid="airline-error">Airline is required.</span>
+              }
+            </div>
+
+            <!-- Flight Number -->
+            <div class="form-group">
+              <label for="flightNumber">Flight Number <span class="required">*</span></label>
+              <input
+                id="flightNumber"
+                type="text"
+                formControlName="flightNumber"
+                placeholder="e.g. DL1234"
+                class="uppercase-input"
+                (input)="onFlightNumberInput($event)"
+                [class.input-invalid]="flightForm.get('flightNumber')?.invalid && (flightForm.get('flightNumber')?.touched || flightForm.get('flightNumber')?.dirty)"
+              />
+              @if (flightForm.get('flightNumber')?.invalid && (flightForm.get('flightNumber')?.touched || flightForm.get('flightNumber')?.dirty)) {
+                <span class="field-error" data-testid="flightNumber-error">Flight number is required.</span>
+              }
+            </div>
+          </div>
+
+          <div class="form-row grid-2">
+            <!-- Arrival Date -->
+            <div class="form-group">
+              <label for="arrivalDate">Arrival Date <span class="required">*</span></label>
+              <input
+                id="arrivalDate"
+                type="date"
+                formControlName="arrivalDate"
+                [class.input-invalid]="flightForm.get('arrivalDate')?.invalid && (flightForm.get('arrivalDate')?.touched || flightForm.get('arrivalDate')?.dirty)"
+              />
+              @if (flightForm.get('arrivalDate')?.invalid && (flightForm.get('arrivalDate')?.touched || flightForm.get('arrivalDate')?.dirty)) {
+                <span class="field-error" data-testid="arrivalDate-error">Arrival date is required.</span>
+              }
+            </div>
+
+            <!-- Arrival Time -->
+            <div class="form-group">
+              <label for="arrivalTime">Arrival Time <span class="required">*</span></label>
+              <input
+                id="arrivalTime"
+                type="time"
+                formControlName="arrivalTime"
+                [class.input-invalid]="flightForm.get('arrivalTime')?.invalid && (flightForm.get('arrivalTime')?.touched || flightForm.get('arrivalTime')?.dirty)"
+              />
+              @if (flightForm.get('arrivalTime')?.invalid && (flightForm.get('arrivalTime')?.touched || flightForm.get('arrivalTime')?.dirty)) {
+                <span class="field-error" data-testid="arrivalTime-error">Arrival time is required.</span>
+              }
+            </div>
+          </div>
+
+          <!-- Number of Guests -->
+          <div class="form-group">
+            <label for="numOfGuests">Number of Guests <span class="required">*</span></label>
+            <input
+              id="numOfGuests"
+              type="number"
+              min="1"
+              step="1"
+              formControlName="numOfGuests"
+              [class.input-invalid]="flightForm.get('numOfGuests')?.invalid && (flightForm.get('numOfGuests')?.touched || flightForm.get('numOfGuests')?.dirty)"
+            />
+            @if (flightForm.get('numOfGuests')?.invalid && (flightForm.get('numOfGuests')?.touched || flightForm.get('numOfGuests')?.dirty)) {
+              <span class="field-error" data-testid="numOfGuests-error">
+                @if (flightForm.get('numOfGuests')?.errors?.['required']) {
+                  Number of guests is required.
+                } @else if (flightForm.get('numOfGuests')?.errors?.['min']) {
+                  Guests must be at least 1.
+                }
+              </span>
+            }
+          </div>
+
+          <!-- Comments (Optional) -->
+          <div class="form-group">
+            <label for="comments">Comments & Special Requests <span class="optional">(Optional)</span></label>
+            <textarea
+              id="comments"
+              rows="3"
+              formControlName="comments"
+              placeholder="e.g. Traveling with infant, requesting wheelchair assistance"
+            ></textarea>
+          </div>
+
+          <!-- Submit Button -->
+          <button
+            type="submit"
+            class="btn-submit"
+            [disabled]="flightForm.invalid || status() === 'SUBMITTING'"
+            data-testid="submit-btn"
+          >
+            @if (status() === 'SUBMITTING') {
+              <span class="spinner" aria-hidden="true"></span>
+              <span>Submitting Flight Details...</span>
+            } @else {
+              <span>Submit Flight Information</span>
+            }
+          </button>
+        </form>
+      </section>
+    }
+  </main>
+</div>

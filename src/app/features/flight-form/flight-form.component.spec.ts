@@ -1,0 +1,204 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
+import { of } from 'rxjs';
+import { FlightFormComponent } from './flight-form.component';
+import { FlightService } from '../../core/services/flight.service';
+import { FirebaseAuthService } from '../../core/firebase/firebase-auth.service';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { signal } from '@angular/core';
+
+describe('FlightFormComponent', () => {
+  let component: FlightFormComponent;
+  let fixture: ComponentFixture<FlightFormComponent>;
+  let mockFlightService: { submitFlightInfo: ReturnType<typeof vi.fn> };
+  let mockAuthService: {
+    logout: ReturnType<typeof vi.fn>;
+    currentUser: ReturnType<typeof signal>;
+  };
+  let mockRouter: { navigate: ReturnType<typeof vi.fn> };
+
+  beforeEach(async () => {
+    mockFlightService = {
+      submitFlightInfo: vi.fn(),
+    };
+    mockAuthService = {
+      logout: vi.fn().mockResolvedValue(undefined),
+      currentUser: signal({ email: 'reviewer@challenge.com' } as any),
+    };
+    mockRouter = {
+      navigate: vi.fn().mockResolvedValue(true),
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [FlightFormComponent],
+      providers: [
+        { provide: FlightService, useValue: mockFlightService },
+        { provide: FirebaseAuthService, useValue: mockAuthService },
+        { provide: Router, useValue: mockRouter },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(FlightFormComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('Test 1: should be invalid when required fields are empty', () => {
+    component.flightForm.patchValue({
+      airline: '',
+      arrivalDate: '',
+      arrivalTime: '',
+      flightNumber: '',
+      numOfGuests: '',
+    });
+
+    expect(component.flightForm.valid).toBe(false);
+    expect(component.flightForm.get('airline')?.hasError('required')).toBe(true);
+    expect(component.flightForm.get('arrivalDate')?.hasError('required')).toBe(true);
+    expect(component.flightForm.get('arrivalTime')?.hasError('required')).toBe(true);
+    expect(component.flightForm.get('flightNumber')?.hasError('required')).toBe(true);
+    expect(component.flightForm.get('numOfGuests')?.hasError('required')).toBe(true);
+  });
+
+  it('Test 2: should reject 0 or negative numbers in numOfGuests validator', () => {
+    const guestsCtrl = component.flightForm.get('numOfGuests');
+
+    guestsCtrl?.setValue(0);
+    expect(guestsCtrl?.valid).toBe(false);
+    expect(guestsCtrl?.hasError('min')).toBe(true);
+
+    guestsCtrl?.setValue(-3);
+    expect(guestsCtrl?.valid).toBe(false);
+    expect(guestsCtrl?.hasError('min')).toBe(true);
+
+    guestsCtrl?.setValue(1);
+    expect(guestsCtrl?.valid).toBe(true);
+
+    guestsCtrl?.setValue(5);
+    expect(guestsCtrl?.valid).toBe(true);
+  });
+
+  it('Test 3: should disable submit button when form is invalid or when status is SUBMITTING', () => {
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    const submitBtn = compiled.querySelector<HTMLButtonElement>('[data-testid="submit-btn"]');
+    expect(submitBtn?.disabled).toBe(true);
+
+    component.flightForm.setValue({
+      airline: 'United',
+      arrivalDate: '2026-10-02',
+      arrivalTime: '10:00',
+      flightNumber: 'UA456',
+      numOfGuests: 2,
+      comments: '',
+    });
+    fixture.detectChanges();
+    expect(submitBtn?.disabled).toBe(false);
+
+    component.status.set('SUBMITTING');
+    fixture.detectChanges();
+    expect(submitBtn?.disabled).toBe(true);
+  });
+
+  it('Test 4: should cast numOfGuests to a number and pass exact FlightInfoPayload contract to FlightService', () => {
+    mockFlightService.submitFlightInfo.mockReturnValue(
+      of({ success: true, message: 'Success' })
+    );
+
+    component.flightForm.setValue({
+      airline: '  Delta Airlines  ',
+      arrivalDate: '2026-10-05',
+      arrivalTime: '15:45',
+      flightNumber: 'dl789  ',
+      numOfGuests: '3' as any,
+      comments: '  Traveling with violin  ',
+    });
+
+    component.onSubmit();
+
+    expect(mockFlightService.submitFlightInfo).toHaveBeenCalledWith({
+      airline: 'Delta Airlines',
+      arrivalDate: '2026-10-05',
+      arrivalTime: '15:45',
+      flightNumber: 'DL789',
+      numOfGuests: 3,
+      comments: 'Traveling with violin',
+    });
+    expect(typeof mockFlightService.submitFlightInfo.mock.calls[0][0].numOfGuests).toBe('number');
+  });
+
+  it('Test 5: should switch view to success screen with "You\'re all done" messaging upon successful submission', () => {
+    mockFlightService.submitFlightInfo.mockReturnValue(
+      of({ success: true, message: 'Flight info accepted.' })
+    );
+
+    component.flightForm.setValue({
+      airline: 'British Airways',
+      arrivalDate: '2026-11-01',
+      arrivalTime: '08:30',
+      flightNumber: 'BA112',
+      numOfGuests: 1,
+      comments: '',
+    });
+
+    component.onSubmit();
+    fixture.detectChanges();
+
+    expect(component.status()).toBe('SUCCESS');
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.intake-form')).toBeNull();
+    const successCard = compiled.querySelector('[data-testid="success-card"]');
+    expect(successCard).not.toBeNull();
+    expect(successCard?.textContent).toContain("You're all done.");
+    expect(successCard?.textContent).toContain('Flight Details Received!');
+  });
+
+  it('Test 6: should switch status to ERROR and display error alert without clearing form inputs upon submission failure', () => {
+    mockFlightService.submitFlightInfo.mockReturnValue(
+      of({ success: false, message: 'Cloud function timeout error.' })
+    );
+
+    component.flightForm.setValue({
+      airline: 'Air France',
+      arrivalDate: '2026-10-20',
+      arrivalTime: '18:00',
+      flightNumber: 'AF007',
+      numOfGuests: 4,
+      comments: 'Special meal requested',
+    });
+
+    component.onSubmit();
+    fixture.detectChanges();
+
+    expect(component.status()).toBe('ERROR');
+    const compiled = fixture.nativeElement as HTMLElement;
+    const errorAlert = compiled.querySelector('[data-testid="error-alert"]');
+    expect(errorAlert).not.toBeNull();
+    expect(errorAlert?.textContent).toContain('Cloud function timeout error.');
+
+    expect(component.flightForm.get('airline')?.value).toBe('Air France');
+    expect(component.flightForm.get('flightNumber')?.value).toBe('AF007');
+    expect(component.flightForm.get('numOfGuests')?.value).toBe(4);
+    expect(component.flightForm.get('comments')?.value).toBe('Special meal requested');
+  });
+
+  it('should reset form and return to IDLE when "Submit Another Flight" is triggered', () => {
+    component.status.set('SUCCESS');
+    fixture.detectChanges();
+
+    component.resetForm();
+    fixture.detectChanges();
+
+    expect(component.status()).toBe('IDLE');
+    expect(component.flightForm.get('airline')?.value).toBe('');
+    expect(component.flightForm.get('numOfGuests')?.value).toBe(1);
+    expect(component.flightForm.enabled).toBe(true);
+  });
+
+  it('should invoke authService.logout() and navigate to /login when onSignOut() is called', async () => {
+    await component.onSignOut();
+
+    expect(mockAuthService.logout).toHaveBeenCalled();
+    expect(mockRouter.navigate).toHaveBeenCalledWith(['/login']);
+  });
+});

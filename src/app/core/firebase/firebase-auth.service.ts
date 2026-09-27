@@ -51,6 +51,10 @@ export class FirebaseAuthService {
     this._currentUser.set(null);
   }
 
+  async logout(): Promise<void> {
+    return this.signOut();
+  }
+
   getAuthState(): Observable<User | null> {
     return new Observable<User | null>((subscriber) => {
       const unsubscribe = onAuthStateChanged(
