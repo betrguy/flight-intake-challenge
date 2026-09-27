@@ -1,6 +1,13 @@
-/* Global Unified Typography
- * Standardizes the header font family as the single, universal font for the entire application.
+/* Global Unified Typography & Dark Theme Invariance
+ * Standardizes the header font family as the universal font across the entire site.
+ * Configures color-scheme: dark so all native controls and popups render in dark mode.
  */
+:root,
+html,
+body {
+  color-scheme: dark;
+}
+
 *,
 *::before,
 *::after,
@@ -24,4 +31,10 @@ body {
   color: #f8fafc;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure native date and time picker dialogs adhere to the dark theme */
+input[type="date"],
+input[type="time"] {
+  color-scheme: dark;
 }

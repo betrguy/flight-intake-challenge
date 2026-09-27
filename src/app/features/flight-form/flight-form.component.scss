@@ -182,6 +182,21 @@
       background: #1e293b;
       cursor: not-allowed;
     }
+
+    &[type="date"],
+    &[type="time"] {
+      color-scheme: dark;
+
+      &::-webkit-calendar-picker-indicator {
+        cursor: pointer;
+        opacity: 0;
+        position: absolute;
+        right: 0.75rem;
+        width: 1.5rem;
+        height: 1.5rem;
+        z-index: 2;
+      }
+    }
   }
 
   .input-picker-wrapper {

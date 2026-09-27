@@ -98,8 +98,6 @@
                   id="arrivalDate"
                   type="date"
                   formControlName="arrivalDate"
-                  (click)="openPicker($event)"
-                  (focus)="openPicker($event)"
                   [class.input-invalid]="flightForm.get('arrivalDate')?.invalid && (flightForm.get('arrivalDate')?.touched || flightForm.get('arrivalDate')?.dirty)"
                 />
                 <button
@@ -131,8 +129,6 @@
                   id="arrivalTime"
                   type="time"
                   formControlName="arrivalTime"
-                  (click)="openPicker($event)"
-                  (focus)="openPicker($event)"
                   [class.input-invalid]="flightForm.get('arrivalTime')?.invalid && (flightForm.get('arrivalTime')?.touched || flightForm.get('arrivalTime')?.dirty)"
                 />
                 <button
