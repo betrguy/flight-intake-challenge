@@ -158,7 +158,11 @@
               type="number"
               min="1"
               step="1"
+              inputmode="numeric"
+              pattern="[0-9]*"
               formControlName="numOfGuests"
+              (keydown)="blockInvalidNumberKeys($event)"
+              (paste)="onGuestsPaste($event)"
               [class.input-invalid]="flightForm.get('numOfGuests')?.invalid && (flightForm.get('numOfGuests')?.touched || flightForm.get('numOfGuests')?.dirty)"
             />
             @if (flightForm.get('numOfGuests')?.invalid && (flightForm.get('numOfGuests')?.touched || flightForm.get('numOfGuests')?.dirty)) {
@@ -167,6 +171,8 @@
                   Number of guests is required.
                 } @else if (flightForm.get('numOfGuests')?.errors?.['min']) {
                   Guests must be at least 1.
+                } @else if (flightForm.get('numOfGuests')?.errors?.['step']) {
+                  Guests must be a whole number.
                 }
               </span>
             }

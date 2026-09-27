@@ -361,3 +361,27 @@ Adhering to **Continuous Delivery**, **Traceability**, and **Production Operabil
 2. **Streamlined Production Presentation (Zero Clutter)**:
    - Purged evaluation helper artifacts (such as the Evaluator Credentials card) and restrictive internal jargon from the login view to deliver a clean customer-facing production presentation.
    - Refined input affordances (`Email` instead of verbose compound labels) and elevated the brand title across the application to an active call-to-action: **"Enter Your Flight Info"**.
+
+---
+
+## Phase 7: Numeric Input Hardening & Exponential Notation Containment
+
+### Prompt (Verbatim)
+> For some reason the letter 'e' is a permitted text input in the 'Number of Guests' field
+
+---
+
+### Architectural Decisions & Rationale (Phase 7)
+
+1. **HTML5 Scientific Notation Containment (`<input type="number">`)**:
+   - By default in the HTML5 specification, `type="number"` inputs permit characters associated with exponential notation (`'e'`, `'E'`) and numeric signs (`'+'`, `'-'`, `'.'`). For integer-only business domains such as passenger/guest counts, permitting scientific notation introduces ambiguity and potential NaN/float anomalies.
+   - Attached an explicit `(keydown)` gatekeeper (`blockInvalidNumberKeys`) to prevent the default action whenever `'e'`, `'E'`, `'+'`, `'-'`, or `'.'` keystrokes are received.
+   - Configured `inputmode="numeric"` and `pattern="[0-9]*"` to prompt mobile and touch devices with standard numeric ten-key layouts.
+
+2. **Clipboard Paste Sanitization**:
+   - Added an `(paste)` handler (`onGuestsPaste`) that inspects clipboard data via the Clipboard API and cancels paste events containing non-digit strings, scientific notation, or decimals.
+
+3. **Multi-Layer Defensive Enforcement (The Boundary Vault)**:
+   - In accordance with the "Defensive Gatekeeper" principle, the UI input restrictions are backed by Angular Reactive Form step validation (`step="1"`, `min="1"`) with clear inline feedback (`"Guests must be a whole number."`).
+   - Reinforced the underlying `FlightFormComponent.onSubmit()` Data Boundary Vault with runtime integer validation (`Number.isInteger(rawGuests) && rawGuests >= 1`), guaranteeing that only strictly verified, whole-number integer payloads are forwarded to `FlightService`.
+

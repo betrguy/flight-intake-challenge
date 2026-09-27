@@ -276,5 +276,88 @@ describe('FlightFormComponent', () => {
     expect(mockAuthService.logout).toHaveBeenCalled();
     expect(mockRouter.navigate).toHaveBeenCalledWith(['/login']);
   });
+
+  describe('Number of Guests Input Protections', () => {
+    it('should prevent default when invalid keys (e, E, +, -, .) are pressed in numOfGuests', () => {
+      const invalidKeys = ['e', 'E', '+', '-', '.'];
+
+      invalidKeys.forEach((key) => {
+        const event = new KeyboardEvent('keydown', { key, cancelable: true });
+        const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
+        component.blockInvalidNumberKeys(event);
+        expect(preventDefaultSpy).toHaveBeenCalled();
+      });
+    });
+
+    it('should allow valid digit and control keys in numOfGuests', () => {
+      const validKeys = ['0', '1', '5', '9', 'Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'Delete'];
+
+      validKeys.forEach((key) => {
+        const event = new KeyboardEvent('keydown', { key, cancelable: true });
+        const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
+        component.blockInvalidNumberKeys(event);
+        expect(preventDefaultSpy).not.toHaveBeenCalled();
+      });
+    });
+
+    it('should block non-digit clipboard pastes in numOfGuests', () => {
+      const invalidPastes = ['1e3', '3.14', '-2', 'abc', '2+2'];
+
+      invalidPastes.forEach((text) => {
+        const clipboardData = {
+          getData: vi.fn().mockReturnValue(text),
+        } as unknown as DataTransfer;
+        const pasteEvent = new Event('paste', { cancelable: true }) as ClipboardEvent;
+        Object.defineProperty(pasteEvent, 'clipboardData', { value: clipboardData });
+        const preventDefaultSpy = vi.spyOn(pasteEvent, 'preventDefault');
+
+        component.onGuestsPaste(pasteEvent);
+        expect(preventDefaultSpy).toHaveBeenCalled();
+      });
+    });
+
+    it('should permit valid integer clipboard pastes in numOfGuests', () => {
+      const validPastes = ['1', '12', ' 5 '];
+
+      validPastes.forEach((text) => {
+        const clipboardData = {
+          getData: vi.fn().mockReturnValue(text),
+        } as unknown as DataTransfer;
+        const pasteEvent = new Event('paste', { cancelable: true }) as ClipboardEvent;
+        Object.defineProperty(pasteEvent, 'clipboardData', { value: clipboardData });
+        const preventDefaultSpy = vi.spyOn(pasteEvent, 'preventDefault');
+
+        component.onGuestsPaste(pasteEvent);
+        expect(preventDefaultSpy).not.toHaveBeenCalled();
+      });
+    });
+
+    it('should flag decimal guest values as invalid via step validator', () => {
+      const guestsCtrl = component.flightForm.get('numOfGuests');
+      guestsCtrl?.setValue(2.5);
+      expect(guestsCtrl?.valid).toBe(false);
+      expect(guestsCtrl?.errors).toBeTruthy();
+    });
+
+    it('should reject non-integer guest values in the boundary vault if presentation validation is bypassed', () => {
+      component.flightForm.setValue({
+        airline: 'Delta',
+        arrivalDate: '2026-10-10',
+        arrivalTime: '14:30',
+        flightNumber: 'DL101',
+        numOfGuests: 2.5 as any,
+        comments: '',
+      });
+      // Clear errors on the control to simulate bypassing presentation step validation
+      component.flightForm.get('numOfGuests')?.setErrors(null);
+
+      component.onSubmit();
+
+      expect(component.status()).toBe('ERROR');
+      expect(component.errorMessage()).toContain('whole number of at least 1');
+      expect(mockFlightService.submitFlightInfo).not.toHaveBeenCalled();
+    });
+  });
 });
+
 

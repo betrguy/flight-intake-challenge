@@ -58,6 +58,26 @@ export class FlightFormComponent {
     }
   }
 
+  /**
+   * Disallows exponential notation ('e', 'E'), sign symbols ('+', '-'),
+   * and decimal points ('.') in the integer-only Number of Guests field.
+   */
+  blockInvalidNumberKeys(event: KeyboardEvent): void {
+    if (['e', 'E', '+', '-', '.'].includes(event.key)) {
+      event.preventDefault();
+    }
+  }
+
+  /**
+   * Sanitizes clipboard paste data to prevent non-digit strings from being pasted.
+   */
+  onGuestsPaste(event: ClipboardEvent): void {
+    const pasteData = event.clipboardData?.getData('text') || '';
+    if (!/^\d+$/.test(pasteData.trim())) {
+      event.preventDefault();
+    }
+  }
+
   onSubmit(): void {
     if (this.flightForm.invalid || this.status() === 'SUBMITTING') {
       this.flightForm.markAllAsTouched();
@@ -84,6 +104,14 @@ export class FlightFormComponent {
       return;
     }
 
+    // 3. Verify numOfGuests is a valid positive integer
+    const rawGuests = Number(raw.numOfGuests);
+    if (!Number.isInteger(rawGuests) || rawGuests < 1) {
+      this.status.set('ERROR');
+      this.errorMessage.set('Number of guests must be a whole number of at least 1.');
+      return;
+    }
+
     this.status.set('SUBMITTING');
     this.errorMessage.set(null);
     this.flightForm.disable();
@@ -96,7 +124,7 @@ export class FlightFormComponent {
       arrivalDate: rawDateStr,
       arrivalTime: rawTimeStr,
       flightNumber: String(raw.flightNumber || '').trim().toUpperCase(),
-      numOfGuests: Number(raw.numOfGuests),
+      numOfGuests: rawGuests,
       ...(trimmedComments ? { comments: trimmedComments } : {}),
     };
 
