@@ -2,8 +2,7 @@
   <div class="login-card">
     <div class="login-header">
       <div class="badge-icon">✈</div>
-      <h1>Flight Intake System</h1>
-      <p class="subtitle">Access to the Flight Intake System is restricted to authorized candidates and evaluators.</p>
+      <h1>Enter Your Flight Info</h1>
     </div>
 
     @if (errorMessage()) {
@@ -15,7 +14,7 @@
 
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate class="login-form">
       <div class="form-group">
-        <label for="email">Evaluator / Candidate Email</label>
+        <label for="email">Email</label>
         <input
           id="email"
           type="email"
@@ -59,24 +58,9 @@
           <span class="spinner" aria-hidden="true"></span>
           <span>Authenticating...</span>
         } @else {
-          <span>Sign In to Flight System</span>
+          <span>Sign In</span>
         }
       </button>
     </form>
-
-    <div class="credentials-helper">
-      <div class="helper-header">
-        <span class="helper-badge">Evaluator Credentials</span>
-        <button type="button" class="btn-quick-fill" (click)="fillEvaluationCredentials()">Auto-fill</button>
-      </div>
-      <div class="credential-row">
-        <span class="cred-label">Email:</span>
-        <code class="cred-value">reviewer&#64;challenge.com</code>
-      </div>
-      <div class="credential-row">
-        <span class="cred-label">Password:</span>
-        <code class="cred-value">Challenge2026!</code>
-      </div>
-    </div>
   </div>
 </div>

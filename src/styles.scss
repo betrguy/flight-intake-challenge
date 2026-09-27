@@ -1,1 +1,27 @@
-/* You can add global styles to this file, and also import other style files */
+/* Global Unified Typography
+ * Standardizes the header font family as the single, universal font for the entire application.
+ */
+*,
+*::before,
+*::after,
+html,
+body,
+button,
+input,
+textarea,
+select,
+code,
+kbd,
+samp,
+pre {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif !important;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #0f172a;
+  color: #f8fafc;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

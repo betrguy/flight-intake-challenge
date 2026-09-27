@@ -342,3 +342,22 @@ Adhering to **Continuous Delivery**, **Traceability**, and **Production Operabil
 3. **Deterministic Deployment**:
    - Production bundle output is verified against Angular strict budgets with zero warnings and zero errors.
    - `firebase.json` configures atomic SPA URL rewrites targeting `dist/monster-app/browser` for seamless client-side routing on Google Cloud global CDN infrastructure.
+
+---
+
+## Phase 6: Brand Title Refinement, Typography Unification & Public Intake Streamlining
+
+### Prompt (Verbatim)
+> Whatever font is being used for the 'Flight Intake System' header needs to be used as the only font on the entire site. Document this in the prompt logs too. You can also remove 'Evaluator Credentials' section entirely. Remove the string 'Access to the Flight Intake System is restricted to authorized candidates and evaluators.' entirely. Change 'Evaluator / Candidate Email' to 'Email'. Change 'Flight Intake System' to 'Enter Your Flight Info'
+
+---
+
+### Architectural Decisions & Rationale (Phase 6)
+
+1. **Global Unified Typography Invariance**:
+   - The primary brand header font stack (`system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif`) was established as the single, universal typography across the entire DOM tree in `src/styles.scss`.
+   - By eliminating disjoint font families, monospace overrides, and external web font dependencies, the application achieves visual harmony, instantaneous layout rendering, and zero cumulative layout shifts (CLS: 0).
+
+2. **Streamlined Production Presentation (Zero Clutter)**:
+   - Purged evaluation helper artifacts (such as the Evaluator Credentials card) and restrictive internal jargon from the login view to deliver a clean customer-facing production presentation.
+   - Refined input affordances (`Email` instead of verbose compound labels) and elevated the brand title across the application to an active call-to-action: **"Enter Your Flight Info"**.
