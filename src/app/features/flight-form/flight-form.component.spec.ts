@@ -195,6 +195,81 @@ describe('FlightFormComponent', () => {
     expect(component.flightForm.enabled).toBe(true);
   });
 
+  it('should verify valid date selection creates a valid Date-convertible payload string', () => {
+    mockFlightService.submitFlightInfo.mockReturnValue(of({ success: true }));
+
+    component.flightForm.setValue({
+      airline: 'Lufthansa',
+      arrivalDate: '2026-12-25',
+      arrivalTime: '14:20',
+      flightNumber: 'LH400',
+      numOfGuests: 2,
+      comments: 'Holiday flight',
+    });
+
+    component.onSubmit();
+
+    expect(mockFlightService.submitFlightInfo).toHaveBeenCalled();
+    const payload = mockFlightService.submitFlightInfo.mock.calls[0][0];
+    expect(payload.arrivalDate).toBe('2026-12-25');
+    const parsedDate = new Date(payload.arrivalDate);
+    expect(isNaN(parsedDate.getTime())).toBe(false);
+    expect(parsedDate.getFullYear()).toBe(2026);
+  });
+
+  it('should reject malformed arrivalDate in boundary vault and set ERROR status', () => {
+    component.flightForm.setValue({
+      airline: 'Delta',
+      arrivalDate: 'not-a-valid-date',
+      arrivalTime: '12:00',
+      flightNumber: 'DL101',
+      numOfGuests: 1,
+      comments: '',
+    });
+
+    component.onSubmit();
+
+    expect(component.status()).toBe('ERROR');
+    expect(component.errorMessage()).toContain('Invalid arrival date');
+    expect(mockFlightService.submitFlightInfo).not.toHaveBeenCalled();
+  });
+
+  it('should reject malformed arrivalTime in boundary vault and set ERROR status', () => {
+    component.flightForm.setValue({
+      airline: 'Delta',
+      arrivalDate: '2026-10-10',
+      arrivalTime: '25:99',
+      flightNumber: 'DL101',
+      numOfGuests: 1,
+      comments: '',
+    });
+
+    component.onSubmit();
+
+    expect(component.status()).toBe('ERROR');
+    expect(component.errorMessage()).toContain('Invalid arrival time');
+    expect(mockFlightService.submitFlightInfo).not.toHaveBeenCalled();
+  });
+
+  it('should invoke showPicker when supported and gracefully fallback when unsupported', () => {
+    const mockInput = document.createElement('input');
+    const showPickerSpy = vi.fn();
+    (mockInput as any).showPicker = showPickerSpy;
+
+    component.triggerPicker(mockInput);
+    expect(showPickerSpy).toHaveBeenCalled();
+
+    // Verify graceful fallback when showPicker throws
+    showPickerSpy.mockImplementation(() => {
+      throw new Error('NotAllowedError');
+    });
+    expect(() => component.triggerPicker(mockInput)).not.toThrow();
+
+    // Verify graceful fallback when input lacks showPicker
+    const fallbackInput = document.createElement('input');
+    expect(() => component.triggerPicker(fallbackInput)).not.toThrow();
+  });
+
   it('should invoke authService.logout() and navigate to /login when onSignOut() is called', async () => {
     await component.onSignOut();
 
@@ -202,3 +277,4 @@ describe('FlightFormComponent', () => {
     expect(mockRouter.navigate).toHaveBeenCalledWith(['/login']);
   });
 });
+

@@ -33,7 +33,7 @@ Our pre-prompt synthesis was grounded in foundational engineering literature:
 - **_Modern Software Engineering_ by Dave Farley:**
   Farley describes software engineering as having two essential pillars:
   1. **Managing Complexity:** Tackled through high cohesion, loose coupling, separation of concerns, and modularity. In this codebase, the persistence/cloud layer ([`FirebaseAuthService`](src/app/core/firebase/firebase-auth.service.ts)), transport layer ([`FlightService`](src/app/core/services/flight.service.ts)), perimeter authorization ([`authGuard`](src/app/core/guards/auth.guard.ts)), and user presentation ([`LoginComponent`](src/app/features/login/login.component.ts), [`FlightFormComponent`](src/app/features/flight-form/flight-form.component.ts)) are strictly decoupled.
-  2. **Optimizing for Learning:** Achieved via fast empirical feedback. We established a localized, ESM-native Vitest testing harness capable of executing 31 unit tests in ~2.5 seconds, providing instantaneous feedback on every code mutation without spinning up external servers or manual browser loops.
+  2. **Optimizing for Learning:** Achieved via fast empirical feedback. We established a localized, ESM-native Vitest testing harness capable of executing 35 unit tests in ~2.5 seconds, providing instantaneous feedback on every code mutation without spinning up external servers or manual browser loops.
 - **_First, Break All the Rules_ by Marcus Buckingham & Curt Coffman:**
   Applying the core managerial thesis to system architecture:
   * **Focus on Outcomes, Not Just Steps:** The primary objective was a secure, resilient, and verifiable flight intake workflow. Rather than dictating brittle micro-steps, the architecture defines crystal-clear boundaries, responsibilities, and acceptance contracts for each module.
@@ -76,7 +76,7 @@ Adhering to Dave Farley's principles throughout the application implementation:
 - The outgoing payload strictly conforms to the invariant [`FlightInfoPayload`](src/app/core/models/flight-info.model.ts) domain contract.
 
 ### 4. Fast Empirical Feedback (Automated Test Suite)
-- Built with **Vitest** and **JSDOM**, running an automated suite of **31 unit tests** in **~2.5 seconds**:
+- Built with **Vitest** and **JSDOM**, running an automated suite of **35 unit tests** in **~2.5 seconds**:
   - `auth.guard.spec.ts`: Verifies route activation allowance and unauthorized redirection.
   - `login.component.spec.ts`: Validates input validation, auth delegation, and route navigation.
   - `flight-form.component.spec.ts`: Tests form validation rules, guest boundary bounds, submission locking, and success/error view rendering.
@@ -151,7 +151,7 @@ npm install
 ```
 
 ### 3. Running Unit Tests
-Execute the entire 31-test automated suite via Vitest:
+Execute the entire 35-test automated suite via Vitest:
 ```bash
 # CI single-pass mode
 npm test -- --watch=false

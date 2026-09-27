@@ -39,9 +39,48 @@ export class FlightFormComponent {
     }
   }
 
+  /**
+   * Progressive enhancement helper to invoke native picker when supported.
+   * Gracefully degrades to native input typing and focus behavior.
+   */
+  openPicker(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.triggerPicker(input);
+  }
+
+  triggerPicker(input: HTMLInputElement | null): void {
+    if (input && typeof (input as any).showPicker === 'function') {
+      try {
+        (input as any).showPicker();
+      } catch {
+        // Fallback gracefully without throwing
+      }
+    }
+  }
+
   onSubmit(): void {
     if (this.flightForm.invalid || this.status() === 'SUBMITTING') {
       this.flightForm.markAllAsTouched();
+      return;
+    }
+
+    const raw = this.flightForm.getRawValue();
+
+    // The "Data Boundary Vault" Validation & Sanitization:
+    // 1. Verify arrivalDate is convertible via new Date(...)
+    const rawDateStr = String(raw.arrivalDate || '').trim();
+    const dateParsed = new Date(rawDateStr);
+    if (!rawDateStr || isNaN(dateParsed.getTime())) {
+      this.status.set('ERROR');
+      this.errorMessage.set('Invalid arrival date format. Please select a valid date.');
+      return;
+    }
+
+    // 2. Verify arrivalTime is non-empty and formatted as HH:mm
+    const rawTimeStr = String(raw.arrivalTime || '').trim();
+    if (!rawTimeStr || !/^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/.test(rawTimeStr)) {
+      this.status.set('ERROR');
+      this.errorMessage.set('Invalid arrival time format. Please provide a valid time (HH:mm).');
       return;
     }
 
@@ -49,15 +88,13 @@ export class FlightFormComponent {
     this.errorMessage.set(null);
     this.flightForm.disable();
 
-    const raw = this.flightForm.getRawValue();
     const trimmedComments = raw.comments ? String(raw.comments).trim() : '';
 
-    // The "Data Boundary Vault" Transformation:
     // Strictly sanitize and type-cast boundary data into the immutable FlightInfoPayload contract
     const payload: FlightInfoPayload = {
       airline: String(raw.airline || '').trim(),
-      arrivalDate: String(raw.arrivalDate || '').trim(),
-      arrivalTime: String(raw.arrivalTime || '').trim(),
+      arrivalDate: rawDateStr,
+      arrivalTime: rawTimeStr,
       flightNumber: String(raw.flightNumber || '').trim().toUpperCase(),
       numOfGuests: Number(raw.numOfGuests),
       ...(trimmedComments ? { comments: trimmedComments } : {}),

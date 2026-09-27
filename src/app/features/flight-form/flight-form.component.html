@@ -89,29 +89,65 @@
           </div>
 
           <div class="form-row grid-2">
-            <!-- Arrival Date -->
+            <!-- Arrival Date (Progressive Enhancement Picker) -->
             <div class="form-group">
               <label for="arrivalDate">Arrival Date <span class="required">*</span></label>
-              <input
-                id="arrivalDate"
-                type="date"
-                formControlName="arrivalDate"
-                [class.input-invalid]="flightForm.get('arrivalDate')?.invalid && (flightForm.get('arrivalDate')?.touched || flightForm.get('arrivalDate')?.dirty)"
-              />
+              <div class="input-picker-wrapper">
+                <input
+                  #dateInput
+                  id="arrivalDate"
+                  type="date"
+                  formControlName="arrivalDate"
+                  (click)="openPicker($event)"
+                  (focus)="openPicker($event)"
+                  [class.input-invalid]="flightForm.get('arrivalDate')?.invalid && (flightForm.get('arrivalDate')?.touched || flightForm.get('arrivalDate')?.dirty)"
+                />
+                <button
+                  type="button"
+                  class="picker-affordance-btn"
+                  tabindex="-1"
+                  aria-label="Open calendar picker"
+                  (click)="triggerPicker(dateInput); dateInput.focus()"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                </button>
+              </div>
               @if (flightForm.get('arrivalDate')?.invalid && (flightForm.get('arrivalDate')?.touched || flightForm.get('arrivalDate')?.dirty)) {
                 <span class="field-error" data-testid="arrivalDate-error">Arrival date is required.</span>
               }
             </div>
 
-            <!-- Arrival Time -->
+            <!-- Arrival Time (Progressive Enhancement Picker) -->
             <div class="form-group">
               <label for="arrivalTime">Arrival Time <span class="required">*</span></label>
-              <input
-                id="arrivalTime"
-                type="time"
-                formControlName="arrivalTime"
-                [class.input-invalid]="flightForm.get('arrivalTime')?.invalid && (flightForm.get('arrivalTime')?.touched || flightForm.get('arrivalTime')?.dirty)"
-              />
+              <div class="input-picker-wrapper">
+                <input
+                  #timeInput
+                  id="arrivalTime"
+                  type="time"
+                  formControlName="arrivalTime"
+                  (click)="openPicker($event)"
+                  (focus)="openPicker($event)"
+                  [class.input-invalid]="flightForm.get('arrivalTime')?.invalid && (flightForm.get('arrivalTime')?.touched || flightForm.get('arrivalTime')?.dirty)"
+                />
+                <button
+                  type="button"
+                  class="picker-affordance-btn"
+                  tabindex="-1"
+                  aria-label="Open time selector"
+                  (click)="triggerPicker(timeInput); timeInput.focus()"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                </button>
+              </div>
               @if (flightForm.get('arrivalTime')?.invalid && (flightForm.get('arrivalTime')?.touched || flightForm.get('arrivalTime')?.dirty)) {
                 <span class="field-error" data-testid="arrivalTime-error">Arrival time is required.</span>
               }
