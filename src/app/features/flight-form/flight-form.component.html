@@ -61,12 +61,20 @@
               <input
                 id="airline"
                 type="text"
+                maxlength="50"
                 formControlName="airline"
                 placeholder="e.g. Delta, United, American Airlines"
+                (blur)="onAirlineBlur()"
                 [class.input-invalid]="flightForm.get('airline')?.invalid && (flightForm.get('airline')?.touched || flightForm.get('airline')?.dirty)"
               />
               @if (flightForm.get('airline')?.invalid && (flightForm.get('airline')?.touched || flightForm.get('airline')?.dirty)) {
-                <span class="field-error" data-testid="airline-error">Airline is required.</span>
+                <span class="field-error" data-testid="airline-error">
+                  @if (flightForm.get('airline')?.errors?.['required']) {
+                    Airline is required.
+                  } @else if (flightForm.get('airline')?.errors?.['minlength'] || flightForm.get('airline')?.errors?.['maxlength']) {
+                    Airline name must be between 2 and 50 characters.
+                  }
+                </span>
               }
             </div>
 
@@ -76,14 +84,22 @@
               <input
                 id="flightNumber"
                 type="text"
+                maxlength="10"
                 formControlName="flightNumber"
                 placeholder="e.g. DL1234"
                 class="uppercase-input"
                 (input)="onFlightNumberInput($event)"
+                (blur)="onFlightNumberBlur()"
                 [class.input-invalid]="flightForm.get('flightNumber')?.invalid && (flightForm.get('flightNumber')?.touched || flightForm.get('flightNumber')?.dirty)"
               />
               @if (flightForm.get('flightNumber')?.invalid && (flightForm.get('flightNumber')?.touched || flightForm.get('flightNumber')?.dirty)) {
-                <span class="field-error" data-testid="flightNumber-error">Flight number is required.</span>
+                <span class="field-error" data-testid="flightNumber-error">
+                  @if (flightForm.get('flightNumber')?.errors?.['required']) {
+                    Flight number is required.
+                  } @else if (flightForm.get('flightNumber')?.errors?.['pattern'] || flightForm.get('flightNumber')?.errors?.['maxlength']) {
+                    Please enter a valid flight number (e.g., DL1234 or AA 452).
+                  }
+                </span>
               }
             </div>
           </div>
@@ -97,6 +113,7 @@
                   #dateInput
                   id="arrivalDate"
                   type="date"
+                  [min]="todayDateString"
                   formControlName="arrivalDate"
                   [class.input-invalid]="flightForm.get('arrivalDate')?.invalid && (flightForm.get('arrivalDate')?.touched || flightForm.get('arrivalDate')?.dirty)"
                 />
@@ -116,7 +133,13 @@
                 </button>
               </div>
               @if (flightForm.get('arrivalDate')?.invalid && (flightForm.get('arrivalDate')?.touched || flightForm.get('arrivalDate')?.dirty)) {
-                <span class="field-error" data-testid="arrivalDate-error">Arrival date is required.</span>
+                <span class="field-error" data-testid="arrivalDate-error">
+                  @if (flightForm.get('arrivalDate')?.errors?.['required']) {
+                    Arrival date is required.
+                  } @else if (flightForm.get('arrivalDate')?.errors?.['pastDate']) {
+                    Arrival date cannot be in the past.
+                  }
+                </span>
               }
             </div>
 
@@ -157,6 +180,7 @@
               id="numOfGuests"
               type="number"
               min="1"
+              max="20"
               step="1"
               inputmode="numeric"
               pattern="[0-9]*"
@@ -169,10 +193,8 @@
               <span class="field-error" data-testid="numOfGuests-error">
                 @if (flightForm.get('numOfGuests')?.errors?.['required']) {
                   Number of guests is required.
-                } @else if (flightForm.get('numOfGuests')?.errors?.['min']) {
-                  Guests must be at least 1.
-                } @else if (flightForm.get('numOfGuests')?.errors?.['step']) {
-                  Guests must be a whole number.
+                } @else if (flightForm.get('numOfGuests')?.errors?.['min'] || flightForm.get('numOfGuests')?.errors?.['max'] || flightForm.get('numOfGuests')?.errors?.['pattern'] || flightForm.get('numOfGuests')?.errors?.['step']) {
+                  Number of guests must be between 1 and 20.
                 }
               </span>
             }

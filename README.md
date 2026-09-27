@@ -33,7 +33,7 @@ Our pre-prompt synthesis was grounded in foundational engineering literature:
 - **_Modern Software Engineering_ by Dave Farley:**
   Farley describes software engineering as having two essential pillars:
   1. **Managing Complexity:** Tackled through high cohesion, loose coupling, separation of concerns, and modularity. In this codebase, the persistence/cloud layer ([`FirebaseAuthService`](src/app/core/firebase/firebase-auth.service.ts)), transport layer ([`FlightService`](src/app/core/services/flight.service.ts)), perimeter authorization ([`authGuard`](src/app/core/guards/auth.guard.ts)), and user presentation ([`LoginComponent`](src/app/features/login/login.component.ts), [`FlightFormComponent`](src/app/features/flight-form/flight-form.component.ts)) are strictly decoupled.
-  2. **Optimizing for Learning:** Achieved via fast empirical feedback. We established a localized, ESM-native Vitest testing harness capable of executing 41 unit tests in ~2.5 seconds, providing instantaneous feedback on every code mutation without spinning up external servers or manual browser loops.
+  2. **Optimizing for Learning:** Achieved via fast empirical feedback. We established a localized, ESM-native Vitest testing harness capable of executing 47 unit tests in ~2.5 seconds, providing instantaneous feedback on every code mutation without spinning up external servers or manual browser loops.
 - **_First, Break All the Rules_ by Marcus Buckingham & Curt Coffman:**
   Applying the core managerial thesis to system architecture:
   * **Focus on Outcomes, Not Just Steps:** The primary objective was a secure, resilient, and verifiable flight intake workflow. Rather than dictating brittle micro-steps, the architecture defines crystal-clear boundaries, responsibilities, and acceptance contracts for each module.
@@ -99,6 +99,7 @@ It documents:
 - **Phase 5**: Documentation finalization, principles synthesis, and production deployment configuration.
 - **Phase 6**: Brand title refinement ("Enter Your Flight Info"), unified typography invariance, and public intake streamlining.
 - **Phase 7**: Numeric input hardening, exponential notation containment (`e`, `E`, `+`, `-`, `.`), clipboard paste sanitization, and integer boundary vault enforcement.
+- **Phase 8**: Defensive validation constraints, temporal domain invariance (`futureDateValidator`), real-world airline/transfer bounds, and two-tiered input boundary hardening.
 
 ---
 

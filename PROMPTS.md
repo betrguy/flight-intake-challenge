@@ -385,3 +385,75 @@ Adhering to **Continuous Delivery**, **Traceability**, and **Production Operabil
    - In accordance with the "Defensive Gatekeeper" principle, the UI input restrictions are backed by Angular Reactive Form step validation (`step="1"`, `min="1"`) with clear inline feedback (`"Guests must be a whole number."`).
    - Reinforced the underlying `FlightFormComponent.onSubmit()` Data Boundary Vault with runtime integer validation (`Number.isInteger(rawGuests) && rawGuests >= 1`), guaranteeing that only strictly verified, whole-number integer payloads are forwarded to `FlightService`.
 
+---
+
+## Phase 8: Defensive Validation Constraints & Input Boundary Hardening
+
+### Prompt (Verbatim)
+> Audit and reinforce client-side and boundary validation constraints across all FlightFormComponent inputs to prevent invalid or unrealistic user data:
+> 
+> 1. Audit & Test Existing Field Boundaries:
+>    - Inspect existing validators in `src/app/features/flight-form/flight-form.component.ts`.
+>    - Identify missing real-world constraints across `airline`, `flightNumber`, `arrivalDate`, `arrivalTime`, and `numOfGuests`.
+> 
+> 2. Implement Sensible Real-World Validation Rules:
+>    - `arrivalDate`:
+>      * Must not be in the past. Implement a custom Angular validator `futureDateValidator` ensuring `arrivalDate >= today` (midnight baseline).
+>      * Set the HTML `min` attribute on the date input dynamically to today's date (`YYYY-MM-DD`) as a native UI guardrail.
+>    - `numOfGuests`:
+>      * Maintain `Validators.required` and `Validators.min(1)`.
+>      * Add `Validators.max(20)` (reasonable upper threshold for an individual airport transfer booking).
+>      * Add integer-only check (`Validators.pattern(/^[0-9]+$/)`) to reject decimals.
+>      * Enforce HTML attributes: `min="1"` and `max="20"`.
+>    - `flightNumber`:
+>      * Standard airline flight number format pattern (e.g. 2-3 alphanumeric characters followed by 1-4 digits: `^[A-Za-z0-9]{2,3}\s?[0-9]{1,4}$`, e.g., "DL1234", "AA 452", "UA88").
+>      * Max length constraint (e.g., max 10 characters).
+>      * Auto-uppercase formatting upon blur or input.
+>    - `airline`:
+>      * Min length 2 characters, max length 50 characters (`Validators.minLength(2)`, `Validators.maxLength(50)`).
+>      * Trim leading and trailing whitespace.
+>    - `arrivalTime`:
+>      * Ensure valid standard 24-hour / 12-hour format string (`HH:MM`).
+> 
+> 3. Accessible UX Feedback:
+>    - Provide explicit, helpful inline error messages displayed when controls are touched or dirty:
+>      * "Arrival date cannot be in the past."
+>      * "Number of guests must be between 1 and 20."
+>      * "Please enter a valid flight number (e.g., DL1234 or AA 452)."
+>      * "Airline name must be between 2 and 50 characters."
+> 
+> 4. Automated Unit Test Verification:
+>    - In `flight-form.component.spec.ts`, write dedicated unit tests verifying:
+>      * A past arrival date marks `arrivalDate` invalid.
+>      * Today's or a future arrival date marks `arrivalDate` valid.
+>      * `numOfGuests` greater than 20 or less than 1 marks the form invalid.
+>      * `flightNumber` rejects malformed strings and accepts valid airline flight identifiers.
+>      * `airline` rejects 1-character names.
+>    - Run `npm test -- --watch=false` to verify the entire test suite passes without regression.
+> 
+> 5. Production Build, Deploy, & Git:
+>    - Execute production build: `ng build --configuration production`.
+>    - Deploy to Firebase Hosting: `npm run firebase:deploy` (or `npx firebase deploy --only hosting`).
+>    - Commit and push to GitHub:
+>      `feat(form): implement defensive validation constraints and boundary limits across flight inputs`
+>      `git push origin main`
+
+---
+
+### Architectural Decisions & Rationale (Phase 8)
+
+1. **Temporal Domain Invariance (`futureDateValidator`)**:
+   - Airport intake manifests represent future or immediate arrival logistics; allowing dates in the past is a domain violation.
+   - Built a timezone-resilient `futureDateValidator` normalizing input dates to midnight (00:00:00 local time) and comparing against midnight today.
+   - Paired reactive validation with the native HTML5 `[min]="todayDateString"` attribute to guide user selection via the browser picker interface before submission.
+
+2. **Real-World Airline & Transfer Bounds**:
+   - **`airline`**: Enforced `Validators.minLength(2)` and `Validators.maxLength(50)` with whitespace trimming on blur to prevent 1-letter abbreviations or blank-padded inputs.
+   - **`flightNumber`**: Applied IATA/ICAO airline code regex pattern (`/^\s*[A-Za-z0-9]{2,3}\s?[0-9]{1,4}\s*$/`) and `Validators.maxLength(10)` to reject non-airline identifiers while accommodating optional intra-code spacing and uppercase transformation on blur and input.
+   - **`numOfGuests`**: Bound transfer party sizes between 1 and 20 (`min(1)`, `max(20)`, pattern `/^[0-9]+$/`), preventing unrealistic capacity allocations.
+
+3. **Two-Tiered Defensive Gatekeeper Architecture**:
+   - **Presentation Layer**: Helpful, real-time accessible inline error indicators (`field-error`) surfaced only when inputs are dirty/touched.
+   - **Data Boundary Vault (`onSubmit`)**: Completely re-validates and strictly casts all incoming payload values (ensuring date string format, non-past dates, time regex match, flight number pattern, and integer bounds) before the payload penetrates into `FlightService`.
+
+

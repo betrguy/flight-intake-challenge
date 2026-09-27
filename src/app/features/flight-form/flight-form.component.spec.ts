@@ -358,6 +358,98 @@ describe('FlightFormComponent', () => {
       expect(mockFlightService.submitFlightInfo).not.toHaveBeenCalled();
     });
   });
+
+  describe('Real-World Field Boundary & Validation Constraints', () => {
+    it('should mark arrivalDate as invalid when date is in the past', () => {
+      const dateCtrl = component.flightForm.get('arrivalDate');
+      dateCtrl?.setValue('2020-01-01');
+
+      expect(dateCtrl?.valid).toBe(false);
+      expect(dateCtrl?.hasError('pastDate')).toBe(true);
+    });
+
+    it('should mark arrivalDate as valid when date is today or in the future', () => {
+      const dateCtrl = component.flightForm.get('arrivalDate');
+
+      // Test today's date
+      const today = new Date();
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      dateCtrl?.setValue(todayStr);
+      expect(dateCtrl?.hasError('pastDate')).toBe(false);
+      expect(dateCtrl?.valid).toBe(true);
+
+      // Test future date (10 days from now)
+      const future = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
+      const futureStr = `${future.getFullYear()}-${String(future.getMonth() + 1).padStart(2, '0')}-${String(future.getDate()).padStart(2, '0')}`;
+      dateCtrl?.setValue(futureStr);
+      expect(dateCtrl?.hasError('pastDate')).toBe(false);
+      expect(dateCtrl?.valid).toBe(true);
+    });
+
+    it('should reject numOfGuests greater than 20 or less than 1', () => {
+      const guestsCtrl = component.flightForm.get('numOfGuests');
+
+      // Less than 1
+      guestsCtrl?.setValue(0);
+      expect(guestsCtrl?.valid).toBe(false);
+      expect(guestsCtrl?.hasError('min')).toBe(true);
+
+      // Greater than 20
+      guestsCtrl?.setValue(21);
+      expect(guestsCtrl?.valid).toBe(false);
+      expect(guestsCtrl?.hasError('max')).toBe(true);
+
+      // Valid boundary values
+      guestsCtrl?.setValue(1);
+      expect(guestsCtrl?.valid).toBe(true);
+
+      guestsCtrl?.setValue(20);
+      expect(guestsCtrl?.valid).toBe(true);
+    });
+
+    it('should reject malformed flightNumber strings and accept valid airline flight identifiers', () => {
+      const flightNumCtrl = component.flightForm.get('flightNumber');
+
+      // Invalid flight numbers (too short, missing digits, illegal characters, too long)
+      const invalidFlightNumbers = ['1', 'A', 'DL', 'DL-1234', 'TOOLONGFLIGHT99', 'DL@123'];
+      invalidFlightNumbers.forEach((val) => {
+        flightNumCtrl?.setValue(val);
+        expect(flightNumCtrl?.valid).toBe(false);
+        expect(flightNumCtrl?.hasError('pattern') || flightNumCtrl?.hasError('maxlength')).toBe(true);
+      });
+
+      // Valid flight numbers
+      const validFlightNumbers = ['DL1234', 'AA 452', 'UA88', 'BA112', 'AF007'];
+      validFlightNumbers.forEach((val) => {
+        flightNumCtrl?.setValue(val);
+        expect(flightNumCtrl?.valid).toBe(true);
+      });
+    });
+
+    it('should reject 1-character airline names with minlength error', () => {
+      const airlineCtrl = component.flightForm.get('airline');
+
+      airlineCtrl?.setValue('A');
+      expect(airlineCtrl?.valid).toBe(false);
+      expect(airlineCtrl?.hasError('minlength')).toBe(true);
+
+      airlineCtrl?.setValue('Delta');
+      expect(airlineCtrl?.valid).toBe(true);
+    });
+
+    it('should trim airline on blur and format flightNumber to uppercase on blur', () => {
+      component.flightForm.patchValue({
+        airline: '  United Airlines  ',
+        flightNumber: '  ua123  ',
+      });
+
+      component.onAirlineBlur();
+      component.onFlightNumberBlur();
+
+      expect(component.flightForm.get('airline')?.value).toBe('United Airlines');
+      expect(component.flightForm.get('flightNumber')?.value).toBe('UA123');
+    });
+  });
 });
 
 
