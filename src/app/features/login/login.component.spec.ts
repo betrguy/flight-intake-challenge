@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { LoginComponent } from './login.component';
 import { FirebaseAuthService } from '../../core/firebase/firebase-auth.service';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -9,6 +9,7 @@ describe('LoginComponent', () => {
   let fixture: ComponentFixture<LoginComponent>;
   let mockAuthService: { login: ReturnType<typeof vi.fn> };
   let mockRouter: { navigate: ReturnType<typeof vi.fn> };
+  let mockActivatedRoute: { snapshot: { queryParamMap: { get: ReturnType<typeof vi.fn> } } };
 
   beforeEach(async () => {
     mockAuthService = {
@@ -17,12 +18,20 @@ describe('LoginComponent', () => {
     mockRouter = {
       navigate: vi.fn().mockResolvedValue(true),
     };
+    mockActivatedRoute = {
+      snapshot: {
+        queryParamMap: {
+          get: vi.fn().mockReturnValue(null),
+        },
+      },
+    };
 
     await TestBed.configureTestingModule({
       imports: [LoginComponent],
       providers: [
         { provide: FirebaseAuthService, useValue: mockAuthService },
         { provide: Router, useValue: mockRouter },
+        { provide: ActivatedRoute, useValue: mockActivatedRoute },
       ],
     }).compileComponents();
 
@@ -38,26 +47,26 @@ describe('LoginComponent', () => {
   });
 
   it('Test 2: should invoke FirebaseAuthService.login() when form is submitted with valid data', async () => {
-    mockAuthService.login.mockResolvedValue({ user: { email: 'reviewer@challenge.com' } });
+    mockAuthService.login.mockResolvedValue({ user: { email: 'user@example.com' } });
 
     component.loginForm.setValue({
-      email: 'reviewer@challenge.com',
-      password: 'Challenge2026!',
+      email: 'user@example.com',
+      password: 'SecurePassword123!',
     });
 
     expect(component.loginForm.valid).toBe(true);
 
     await component.onSubmit();
 
-    expect(mockAuthService.login).toHaveBeenCalledWith('reviewer@challenge.com', 'Challenge2026!');
+    expect(mockAuthService.login).toHaveBeenCalledWith('user@example.com', 'SecurePassword123!');
   });
 
   it('Test 3: should redirect to /flight-entry on successful login', async () => {
-    mockAuthService.login.mockResolvedValue({ user: { email: 'reviewer@challenge.com' } });
+    mockAuthService.login.mockResolvedValue({ user: { email: 'user@example.com' } });
 
     component.loginForm.setValue({
-      email: 'reviewer@challenge.com',
-      password: 'Challenge2026!',
+      email: 'user@example.com',
+      password: 'SecurePassword123!',
     });
 
     await component.onSubmit();
@@ -79,11 +88,10 @@ describe('LoginComponent', () => {
     expect(component.isLoading()).toBe(false);
   });
 
-  it('should auto-fill evaluation credentials when helper is clicked', () => {
-    component.fillEvaluationCredentials();
+  it('should display session expired notification when sessionExpired query param is present', () => {
+    mockActivatedRoute.snapshot.queryParamMap.get.mockReturnValue('true');
+    component.ngOnInit();
 
-    expect(component.loginForm.get('email')?.value).toBe('reviewer@challenge.com');
-    expect(component.loginForm.get('password')?.value).toBe('Challenge2026!');
-    expect(component.loginForm.valid).toBe(true);
+    expect(component.errorMessage()).toBe('Your session has expired. Please sign in again.');
   });
 });

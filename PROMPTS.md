@@ -456,4 +456,63 @@ Adhering to **Continuous Delivery**, **Traceability**, and **Production Operabil
    - **Presentation Layer**: Helpful, real-time accessible inline error indicators (`field-error`) surfaced only when inputs are dirty/touched.
    - **Data Boundary Vault (`onSubmit`)**: Completely re-validates and strictly casts all incoming payload values (ensuring date string format, non-past dates, time regex match, flight number pattern, and integer bounds) before the payload penetrates into `FlightService`.
 
+---
+
+## Phase 9: Exhaustive Adversarial Audit, Zero-Leakage & Edge-Case Hardening
+
+### Prompt (Verbatim)
+> Perform an exhaustive adversarial audit and security review across the entire codebase to uncover edge cases, second/third-order UX bugs, and credential leakage before final submission.
+> 
+> Execute and resolve the following five security and boundary audits:
+> 
+> 1. Secrets, Environment & Leakage Audit (Zero-Trust):
+>    - Inspect Git tracking status: Run `git ls-files src/environments/` and verify that `environment.ts` and `environment.prod.ts` are strictly untracked. Only `environment.example.ts` (with empty template strings) must be tracked.
+>    - Scan all source files (`src/app/**`) to ensure NO hardcoded passwords, reviewer credentials, or private API keys exist in component templates, TS classes, HTML comments, or tests.
+>    - Confirm that the reviewer credentials (`reviewer@challenge.com` / `Challenge2026!`) live exclusively in `README.md`.
+> 
+> 2. Numeric & Input Field Hardening (The 'e' and Paste Problem):
+>    - In `numOfGuests`, ensure that typing or pasting exponential notations ('e', 'E', '+', '-', '.') is prevented on `keydown` and sanitized on `paste`/`input`.
+>    - Ensure leading zeroes (e.g., "05") are normalized cleanly to `5`.
+>    - Prevent negative numbers or zero if pasted directly into the input.
+> 
+> 3. Temporal & Timezone Edge Cases (Arrival Date & Time):
+>    - Inspect the `futureDateValidator`. Ensure it evaluates against local midnight without timezone offset bugs (e.g., selecting today at 11:00 PM should never be marked as "yesterday" due to UTC conversion).
+>    - If `arrivalDate` is today, ensure `arrivalTime` does not allow selecting a time that has already passed today.
+> 
+> 4. Network & Lifecycle Resilience (Second-Order Effects):
+>    - Rapid Double-Clicking: Verify the submit button physically ignores clicks while `submissionStatus === 'SUBMITTING'`.
+>    - Form Reset on Retry: If submission fails (`ERROR`), verify the form remains editable and populated so the user doesn't lose work, but resets dirty states properly on successful re-submission.
+>    - Session Expiry / Tab Sleep: If the Firebase auth token expires while the user has the tab open, verify the service catches a 401/403 and redirects gracefully to `/login` with an informational notice rather than throwing an unhandled console error.
+>    - XSS / Injection: Ensure `comments` trims leading/trailing spaces and safely escapes or handles special characters (`<`, `>`, `&`, `"`) so they pass cleanly as standard JSON strings without payload corruption.
+> 
+> 5. Test Verification, Build, & Deployment:
+>    - Add automated test cases covering these edge cases in `flight-form.component.spec.ts`.
+>    - Run `npm test -- --watch=false` to confirm 100% test pass rate.
+>    - Run `ng build --configuration production` to verify clean build.
+>    - Deploy to Firebase Hosting: `npm run firebase:deploy` (or `npx firebase deploy --only hosting`).
+>    - Git commit and push:
+>      `fix(audit): harden input edge cases, sanitize temporal boundaries, and verify zero-leakage security`
+>      `git push origin main`
+
+---
+
+### Architectural Decisions & Rationale (Phase 9)
+
+1. **Zero-Trust Secrets & Credentials Containment**:
+   - Executed recursive search across all `src/app/**` files to eliminate hardcoded evaluation credentials. Removed dead auto-fill methods from `LoginComponent` and replaced test mocks with generic mock identities (`user@example.com`).
+   - Verified that `src/environments/environment.ts` and `environment.prod.ts` remain strictly untracked by Git, keeping active Firebase keys completely sequestered in local developer environments. Reviewer credentials reside exclusively within the executive `README.md`.
+
+2. **Numeric Paste Normalization & Zero-Value Rejection**:
+   - Re-architected `onGuestsPaste` and `onGuestsInput` to parse and normalize values before DOM insertion. Leading zeroes (`"05"`) are automatically coerced to integer primitives (`5`), and invalid attempts to paste zero, negative numbers, or non-digits are blocked outright.
+
+3. **Intra-Day Temporal Ordering (`futureDateTimeValidator`)**:
+   - Added cross-field validation ensuring that when an arrival date is set to today's local date, arrival times that have already transpired in the past are rejected with explicit feedback (`"Arrival time cannot be in the past for today's flight."`).
+   - Reinforced this constraint inside the Data Boundary Vault before payload construction.
+
+4. **Lifecycle & Session Expiration Recovery**:
+   - Extended `FlightSubmissionResponse` with `statusCode`. When backend transport or Firebase Auth emits 401/403 (e.g. from background tab sleep or expired session), the application catches the event, revokes local credentials, and redirects cleanly to `/login?sessionExpired=true`.
+   - `LoginComponent` intercepts this query parameter to inform the user with a friendly notice (`"Your session has expired. Please sign in again."`).
+   - Sanitized optional `comments` inputs to strip invisible control characters (`\u0000-\u001F`) while preserving standard text and JSON string safety.
+
+
 

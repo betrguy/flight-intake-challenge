@@ -43,6 +43,53 @@ export function futureDateValidator(): ValidatorFn {
   };
 }
 
+/**
+ * Cross-field validator ensuring that if arrivalDate is today,
+ * arrivalTime has not already passed.
+ */
+export function futureDateTimeValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const arrivalDateCtrl = control.get('arrivalDate');
+    const arrivalTimeCtrl = control.get('arrivalTime');
+    if (!arrivalDateCtrl?.value || !arrivalTimeCtrl?.value) {
+      return null;
+    }
+    const dateVal = String(arrivalDateCtrl.value).trim();
+    const timeVal = String(arrivalTimeCtrl.value).trim();
+
+    const dateParts = dateVal.split('-');
+    const timeParts = timeVal.split(':');
+    if (dateParts.length === 3 && timeParts.length >= 2) {
+      const year = parseInt(dateParts[0], 10);
+      const month = parseInt(dateParts[1], 10) - 1;
+      const day = parseInt(dateParts[2], 10);
+      const hours = parseInt(timeParts[0], 10);
+      const minutes = parseInt(timeParts[1], 10);
+
+      if (!isNaN(year) && !isNaN(month) && !isNaN(day) && !isNaN(hours) && !isNaN(minutes)) {
+        const inputDateTime = new Date(year, month, day, hours, minutes, 0, 0);
+        const now = new Date();
+        const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+        const inputMidnight = new Date(year, month, day, 0, 0, 0, 0);
+
+        if (inputMidnight.getTime() === todayMidnight.getTime()) {
+          if (inputDateTime.getTime() < now.getTime()) {
+            arrivalTimeCtrl.setErrors({ ...arrivalTimeCtrl.errors, pastTime: true });
+            return { pastTime: true };
+          } else if (arrivalTimeCtrl.hasError('pastTime')) {
+            const { pastTime, ...remaining } = arrivalTimeCtrl.errors || {};
+            arrivalTimeCtrl.setErrors(Object.keys(remaining).length ? remaining : null);
+          }
+        } else if (arrivalTimeCtrl.hasError('pastTime')) {
+          const { pastTime, ...remaining } = arrivalTimeCtrl.errors || {};
+          arrivalTimeCtrl.setErrors(Object.keys(remaining).length ? remaining : null);
+        }
+      }
+    }
+    return null;
+  };
+}
+
 @Component({
   selector: 'app-flight-form',
   standalone: true,
@@ -61,29 +108,32 @@ export class FlightFormComponent {
 
   readonly todayDateString: string = this.getTodayDateString();
 
-  readonly flightForm: FormGroup = this.fb.group({
-    airline: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
-    arrivalDate: ['', [Validators.required, futureDateValidator()]],
-    arrivalTime: ['', [Validators.required]],
-    flightNumber: [
-      '',
-      [
-        Validators.required,
-        Validators.maxLength(10),
-        Validators.pattern(/^\s*[A-Za-z0-9]{2,3}\s?[0-9]{1,4}\s*$/),
+  readonly flightForm: FormGroup = this.fb.group(
+    {
+      airline: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
+      arrivalDate: ['', [Validators.required, futureDateValidator()]],
+      arrivalTime: ['', [Validators.required]],
+      flightNumber: [
+        '',
+        [
+          Validators.required,
+          Validators.maxLength(10),
+          Validators.pattern(/^\s*[A-Za-z0-9]{2,3}\s?[0-9]{1,4}\s*$/),
+        ],
       ],
-    ],
-    numOfGuests: [
-      1,
-      [
-        Validators.required,
-        Validators.min(1),
-        Validators.max(20),
-        Validators.pattern(/^[0-9]+$/),
+      numOfGuests: [
+        1,
+        [
+          Validators.required,
+          Validators.min(1),
+          Validators.max(20),
+          Validators.pattern(/^[0-9]+$/),
+        ],
       ],
-    ],
-    comments: [''],
-  });
+      comments: [''],
+    },
+    { validators: [futureDateTimeValidator()] }
+  );
 
   private getTodayDateString(): string {
     const today = new Date();
@@ -145,12 +195,38 @@ export class FlightFormComponent {
   }
 
   /**
-   * Sanitizes clipboard paste data to prevent non-digit strings from being pasted.
+   * Sanitizes clipboard paste data to prevent non-digit strings, zeroes, or negatives.
+   * Automatically normalizes leading zeroes and bounds the value to 1-20.
    */
   onGuestsPaste(event: ClipboardEvent): void {
-    const pasteData = event.clipboardData?.getData('text') || '';
-    if (!/^\d+$/.test(pasteData.trim())) {
+    const pasteData = (event.clipboardData?.getData('text') || '').trim();
+    const parsed = parseInt(pasteData, 10);
+    if (!/^\d+$/.test(pasteData) || isNaN(parsed) || parsed <= 0) {
       event.preventDefault();
+      return;
+    }
+    event.preventDefault();
+    const normalized = Math.min(Math.max(parsed, 1), 20);
+    this.flightForm.get('numOfGuests')?.setValue(normalized);
+  }
+
+  /**
+   * Normalizes guest input values in real time to strip invalid symbols and strip leading zeros.
+   */
+  onGuestsInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input) return;
+    let val = input.value;
+    val = val.replace(/[eE+\-.]/g, '');
+    if (val) {
+      const parsed = parseInt(val, 10);
+      if (!isNaN(parsed)) {
+        const normalizedStr = String(parsed);
+        if (input.value !== normalizedStr) {
+          input.value = normalizedStr;
+          this.flightForm.get('numOfGuests')?.setValue(parsed, { emitEvent: false });
+        }
+      }
     }
   }
 
@@ -204,6 +280,29 @@ export class FlightFormComponent {
       return;
     }
 
+    // Verify that if arrivalDate is today, arrivalTime has not already passed
+    const timeParts = rawTimeStr.split(':');
+    if (dateParts.length === 3 && timeParts.length >= 2) {
+      const year = parseInt(dateParts[0], 10);
+      const month = parseInt(dateParts[1], 10) - 1;
+      const day = parseInt(dateParts[2], 10);
+      const hours = parseInt(timeParts[0], 10);
+      const minutes = parseInt(timeParts[1], 10);
+      if (!isNaN(year) && !isNaN(month) && !isNaN(day) && !isNaN(hours) && !isNaN(minutes)) {
+        const inputDateTime = new Date(year, month, day, hours, minutes, 0, 0);
+        const now = new Date();
+        const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+        const inputMidnight = new Date(year, month, day, 0, 0, 0, 0);
+        if (inputMidnight.getTime() === todayMidnight.getTime()) {
+          if (inputDateTime.getTime() < now.getTime()) {
+            this.status.set('ERROR');
+            this.errorMessage.set("Arrival time cannot be in the past for today's flight.");
+            return;
+          }
+        }
+      }
+    }
+
     // 4. Verify flightNumber matches standard airline flight format
     const rawFlightNum = String(raw.flightNumber || '').trim().toUpperCase();
     if (!/^[A-Z0-9]{2,3}\s?[0-9]{1,4}$/.test(rawFlightNum) || rawFlightNum.length > 10) {
@@ -224,7 +323,11 @@ export class FlightFormComponent {
     this.errorMessage.set(null);
     this.flightForm.disable();
 
-    const trimmedComments = raw.comments ? String(raw.comments).trim() : '';
+    // Sanitize comments: trim whitespace and strip control characters
+    const rawComments = raw.comments ? String(raw.comments) : '';
+    const sanitizedComments = rawComments
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+      .trim();
 
     // Strictly sanitize and type-cast boundary data into the immutable FlightInfoPayload contract
     const payload: FlightInfoPayload = {
@@ -233,7 +336,7 @@ export class FlightFormComponent {
       arrivalTime: rawTimeStr,
       flightNumber: rawFlightNum,
       numOfGuests: rawGuests,
-      ...(trimmedComments ? { comments: trimmedComments } : {}),
+      ...(sanitizedComments ? { comments: sanitizedComments } : {}),
     };
 
     this.flightService.submitFlightInfo(payload).subscribe({
@@ -241,6 +344,16 @@ export class FlightFormComponent {
         if (response.success) {
           this.status.set('SUCCESS');
         } else {
+          // If session expired or unauthorized (401/403)
+          if (response.statusCode === 401 || response.statusCode === 403 || !this.authService.isAuthenticated()) {
+            this.authService.logout().then(() => {
+              this.router.navigate(['/login'], {
+                queryParams: { sessionExpired: 'true' },
+              });
+            });
+            return;
+          }
+
           this.status.set('ERROR');
           this.errorMessage.set(
             response.message || 'Unable to submit flight details. Please verify your connection or try again.'
@@ -249,6 +362,15 @@ export class FlightFormComponent {
         }
       },
       error: (err) => {
+        if (err?.status === 401 || err?.status === 403 || !this.authService.isAuthenticated()) {
+          this.authService.logout().then(() => {
+            this.router.navigate(['/login'], {
+              queryParams: { sessionExpired: 'true' },
+            });
+          });
+          return;
+        }
+
         this.status.set('ERROR');
         this.errorMessage.set(
           err?.message || 'Unable to submit flight details. Please verify your connection or try again.'

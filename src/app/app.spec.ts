@@ -82,7 +82,7 @@ describe('App & Root Routing', () => {
 
   it('should allow authenticated users to navigate to "/flight-entry" and render FlightFormComponent', async () => {
     mockAuthService.isAuthenticated.mockReturnValue(true);
-    mockAuthService.currentUser.set({ email: 'reviewer@challenge.com' } as any);
+    mockAuthService.currentUser.set({ email: 'authorized@example.com' } as any);
 
     await router.navigate(['/flight-entry']);
     await fixture.whenStable();

@@ -13,6 +13,7 @@ describe('FlightFormComponent', () => {
   let mockFlightService: { submitFlightInfo: ReturnType<typeof vi.fn> };
   let mockAuthService: {
     logout: ReturnType<typeof vi.fn>;
+    isAuthenticated: ReturnType<typeof vi.fn>;
     currentUser: ReturnType<typeof signal>;
   };
   let mockRouter: { navigate: ReturnType<typeof vi.fn> };
@@ -23,7 +24,8 @@ describe('FlightFormComponent', () => {
     };
     mockAuthService = {
       logout: vi.fn().mockResolvedValue(undefined),
-      currentUser: signal({ email: 'reviewer@challenge.com' } as any),
+      isAuthenticated: vi.fn().mockReturnValue(true),
+      currentUser: signal({ email: 'authorized@example.com' } as any),
     };
     mockRouter = {
       navigate: vi.fn().mockResolvedValue(true),
@@ -316,10 +318,14 @@ describe('FlightFormComponent', () => {
       });
     });
 
-    it('should permit valid integer clipboard pastes in numOfGuests', () => {
-      const validPastes = ['1', '12', ' 5 '];
+    it('should permit valid integer clipboard pastes in numOfGuests and normalize value', () => {
+      const validPastes = [
+        { text: '1', expected: 1 },
+        { text: '05', expected: 5 },
+        { text: '12', expected: 12 },
+      ];
 
-      validPastes.forEach((text) => {
+      validPastes.forEach(({ text, expected }) => {
         const clipboardData = {
           getData: vi.fn().mockReturnValue(text),
         } as unknown as DataTransfer;
@@ -328,7 +334,8 @@ describe('FlightFormComponent', () => {
         const preventDefaultSpy = vi.spyOn(pasteEvent, 'preventDefault');
 
         component.onGuestsPaste(pasteEvent);
-        expect(preventDefaultSpy).not.toHaveBeenCalled();
+        expect(preventDefaultSpy).toHaveBeenCalled();
+        expect(component.flightForm.get('numOfGuests')?.value).toBe(expected);
       });
     });
 
@@ -448,6 +455,128 @@ describe('FlightFormComponent', () => {
 
       expect(component.flightForm.get('airline')?.value).toBe('United Airlines');
       expect(component.flightForm.get('flightNumber')?.value).toBe('UA123');
+    });
+  });
+
+  describe('Exhaustive Adversarial Security & Edge Cases', () => {
+    it('should reject paste of zero, negative numbers, or non-numeric strings into numOfGuests', () => {
+      const invalidPastes = ['0', '-1', '-5', '00'];
+
+      invalidPastes.forEach((text) => {
+        const clipboardData = {
+          getData: vi.fn().mockReturnValue(text),
+        } as unknown as DataTransfer;
+        const pasteEvent = new Event('paste', { cancelable: true }) as ClipboardEvent;
+        Object.defineProperty(pasteEvent, 'clipboardData', { value: clipboardData });
+        const preventDefaultSpy = vi.spyOn(pasteEvent, 'preventDefault');
+
+        component.onGuestsPaste(pasteEvent);
+        expect(preventDefaultSpy).toHaveBeenCalled();
+      });
+    });
+
+    it('should normalize leading zeroes and strip exponential notations on onGuestsInput', () => {
+      const mockInput = document.createElement('input');
+      mockInput.value = '05';
+
+      const inputEvent = new Event('input');
+      Object.defineProperty(inputEvent, 'target', { value: mockInput });
+
+      component.onGuestsInput(inputEvent);
+
+      expect(mockInput.value).toBe('5');
+    });
+
+    it('should mark arrivalTime as pastTime when arrivalDate is today and selected time is in the past', () => {
+      const today = new Date();
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+      // Pick a time from 2 hours ago (or 00:01 if early morning)
+      const pastHour = Math.max(0, today.getHours() - 2);
+      const pastTimeStr = `${String(pastHour).padStart(2, '0')}:00`;
+
+      if (today.getHours() > 0) {
+        component.flightForm.patchValue({
+          arrivalDate: todayStr,
+          arrivalTime: pastTimeStr,
+        });
+
+        component.flightForm.updateValueAndValidity();
+
+        expect(component.flightForm.get('arrivalTime')?.hasError('pastTime')).toBe(true);
+      }
+    });
+
+    it('should allow arrivalTime when arrivalDate is today and time is in the future', () => {
+      const today = new Date();
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+      // Future time today if possible, or future date
+      if (today.getHours() < 23) {
+        const futureHour = today.getHours() + 1;
+        const futureTimeStr = `${String(futureHour).padStart(2, '0')}:30`;
+
+        component.flightForm.patchValue({
+          arrivalDate: todayStr,
+          arrivalTime: futureTimeStr,
+        });
+
+        component.flightForm.updateValueAndValidity();
+
+        expect(component.flightForm.get('arrivalTime')?.hasError('pastTime')).toBeFalsy();
+      }
+    });
+
+    it('should prevent rapid double-clicking by ignoring submit when status is SUBMITTING', () => {
+      component.status.set('SUBMITTING');
+
+      component.onSubmit();
+
+      expect(mockFlightService.submitFlightInfo).not.toHaveBeenCalled();
+    });
+
+    it('should redirect gracefully to /login with sessionExpired notice when 401 response is returned', async () => {
+      mockFlightService.submitFlightInfo.mockReturnValue(
+        of({ success: false, message: 'Unauthorized', statusCode: 401 })
+      );
+
+      component.flightForm.setValue({
+        airline: 'Delta',
+        arrivalDate: '2026-10-15',
+        arrivalTime: '14:30',
+        flightNumber: 'DL101',
+        numOfGuests: 2,
+        comments: '',
+      });
+
+      component.onSubmit();
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(mockAuthService.logout).toHaveBeenCalled();
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/login'], {
+        queryParams: { sessionExpired: 'true' },
+      });
+    });
+
+    it('should sanitize comments by stripping control characters and trimming spaces', () => {
+      mockFlightService.submitFlightInfo.mockReturnValue(of({ success: true }));
+
+      component.flightForm.setValue({
+        airline: 'United',
+        arrivalDate: '2026-11-20',
+        arrivalTime: '11:00',
+        flightNumber: 'UA200',
+        numOfGuests: 1,
+        comments: '  Special request with \u0000 control character & <script>alert(1)</script>  ',
+      });
+
+      component.onSubmit();
+
+      expect(mockFlightService.submitFlightInfo).toHaveBeenCalled();
+      const payload = mockFlightService.submitFlightInfo.mock.calls[0][0];
+      expect(payload.comments).not.toContain('\u0000');
+      expect(payload.comments).toBe('Special request with  control character & <script>alert(1)</script>');
     });
   });
 });

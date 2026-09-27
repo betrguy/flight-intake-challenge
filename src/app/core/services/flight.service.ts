@@ -63,6 +63,7 @@ export class FlightService {
         return of({
           success: false,
           message: errorMessage,
+          statusCode: error.status,
         });
       })
     );

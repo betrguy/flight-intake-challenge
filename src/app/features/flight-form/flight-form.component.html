@@ -8,7 +8,7 @@
       </div>
       <div class="user-controls">
         <span class="user-email" data-testid="user-email">
-          {{ authService.currentUser()?.email || 'reviewer@challenge.com' }}
+          {{ authService.currentUser()?.email || 'Authorized User' }}
         </span>
         <button type="button" class="btn-signout" (click)="onSignOut()" data-testid="sign-out-btn">
           Sign Out
@@ -167,7 +167,15 @@
                 </button>
               </div>
               @if (flightForm.get('arrivalTime')?.invalid && (flightForm.get('arrivalTime')?.touched || flightForm.get('arrivalTime')?.dirty)) {
-                <span class="field-error" data-testid="arrivalTime-error">Arrival time is required.</span>
+                <span class="field-error" data-testid="arrivalTime-error">
+                  @if (flightForm.get('arrivalTime')?.errors?.['required']) {
+                    Arrival time is required.
+                  } @else if (flightForm.get('arrivalTime')?.errors?.['pastTime']) {
+                    Arrival time cannot be in the past for today's flight.
+                  } @else {
+                    Please enter a valid time (HH:mm).
+                  }
+                </span>
               }
             </div>
           </div>
@@ -186,6 +194,7 @@
               formControlName="numOfGuests"
               (keydown)="blockInvalidNumberKeys($event)"
               (paste)="onGuestsPaste($event)"
+              (input)="onGuestsInput($event)"
               [class.input-invalid]="flightForm.get('numOfGuests')?.invalid && (flightForm.get('numOfGuests')?.touched || flightForm.get('numOfGuests')?.dirty)"
             />
             @if (flightForm.get('numOfGuests')?.invalid && (flightForm.get('numOfGuests')?.touched || flightForm.get('numOfGuests')?.dirty)) {

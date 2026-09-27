@@ -12,4 +12,5 @@ export type SubmissionStatus = 'IDLE' | 'SUBMITTING' | 'SUCCESS' | 'ERROR';
 export interface FlightSubmissionResponse {
   success: boolean;
   message?: string;
+  statusCode?: number;
 }

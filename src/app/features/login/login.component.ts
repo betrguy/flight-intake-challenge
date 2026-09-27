@@ -1,7 +1,7 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FirebaseAuthService } from '../../core/firebase/firebase-auth.service';
 
 @Component({
@@ -11,8 +11,9 @@ import { FirebaseAuthService } from '../../core/firebase/firebase-auth.service';
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
+  private readonly route = inject(ActivatedRoute);
   readonly authService = inject(FirebaseAuthService);
   readonly router = inject(Router);
 
@@ -23,6 +24,12 @@ export class LoginComponent {
 
   readonly isLoading = signal<boolean>(false);
   readonly errorMessage = signal<string | null>(null);
+
+  ngOnInit(): void {
+    if (this.route.snapshot.queryParamMap.get('sessionExpired') === 'true') {
+      this.errorMessage.set('Your session has expired. Please sign in again.');
+    }
+  }
 
   async onSubmit(): Promise<void> {
     if (this.loginForm.invalid || this.isLoading()) {
@@ -47,7 +54,7 @@ export class LoginComponent {
         code === 'auth/user-not-found' ||
         code === 'auth/wrong-password'
       ) {
-        userFriendlyMsg = 'Invalid email or password. Please verify your evaluation credentials.';
+        userFriendlyMsg = 'Invalid email or password. Please verify your credentials.';
       } else if (code === 'auth/too-many-requests') {
         userFriendlyMsg = 'Access temporarily disabled due to too many failed attempts. Try again later.';
       } else if (error?.message) {
@@ -58,12 +65,5 @@ export class LoginComponent {
     } finally {
       this.isLoading.set(false);
     }
-  }
-
-  fillEvaluationCredentials(): void {
-    this.loginForm.patchValue({
-      email: 'reviewer@challenge.com',
-      password: 'Challenge2026!',
-    });
   }
 }
