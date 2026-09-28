@@ -22,9 +22,11 @@
           placeholder="name@domain.com"
           autocomplete="email"
           [class.input-invalid]="loginForm.get('email')?.invalid && (loginForm.get('email')?.touched || loginForm.get('email')?.dirty)"
+          [attr.aria-invalid]="loginForm.get('email')?.invalid && (loginForm.get('email')?.touched || loginForm.get('email')?.dirty)"
+          [attr.aria-describedby]="loginForm.get('email')?.invalid && (loginForm.get('email')?.touched || loginForm.get('email')?.dirty) ? 'email-error' : null"
         />
         @if (loginForm.get('email')?.invalid && (loginForm.get('email')?.touched || loginForm.get('email')?.dirty)) {
-          <span class="field-error">
+          <span id="email-error" role="alert" aria-live="polite" class="field-error">
             @if (loginForm.get('email')?.errors?.['required']) {
               Email is required.
             } @else if (loginForm.get('email')?.errors?.['email']) {
@@ -43,9 +45,11 @@
           placeholder="••••••••••••"
           autocomplete="current-password"
           [class.input-invalid]="loginForm.get('password')?.invalid && (loginForm.get('password')?.touched || loginForm.get('password')?.dirty)"
+          [attr.aria-invalid]="loginForm.get('password')?.invalid && (loginForm.get('password')?.touched || loginForm.get('password')?.dirty)"
+          [attr.aria-describedby]="loginForm.get('password')?.invalid && (loginForm.get('password')?.touched || loginForm.get('password')?.dirty) ? 'password-error' : null"
         />
         @if (loginForm.get('password')?.invalid && (loginForm.get('password')?.touched || loginForm.get('password')?.dirty)) {
-          <span class="field-error">Password is required.</span>
+          <span id="password-error" role="alert" aria-live="polite" class="field-error">Password is required.</span>
         }
       </div>
 

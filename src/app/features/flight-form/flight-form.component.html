@@ -65,9 +65,11 @@
                 placeholder="e.g. Delta, United, American Airlines"
                 (blur)="onAirlineBlur()"
                 [class.input-invalid]="flightForm.get('airline')?.invalid && (flightForm.get('airline')?.touched || flightForm.get('airline')?.dirty)"
+                [attr.aria-invalid]="flightForm.get('airline')?.invalid && (flightForm.get('airline')?.touched || flightForm.get('airline')?.dirty)"
+                [attr.aria-describedby]="flightForm.get('airline')?.invalid && (flightForm.get('airline')?.touched || flightForm.get('airline')?.dirty) ? 'airline-error' : null"
               />
               @if (flightForm.get('airline')?.invalid && (flightForm.get('airline')?.touched || flightForm.get('airline')?.dirty)) {
-                <span class="field-error" data-testid="airline-error">
+                <span id="airline-error" role="alert" aria-live="polite" class="field-error" data-testid="airline-error">
                   @if (flightForm.get('airline')?.errors?.['required']) {
                     Airline is required.
                   } @else if (flightForm.get('airline')?.errors?.['minlength'] || flightForm.get('airline')?.errors?.['maxlength']) {
@@ -90,9 +92,11 @@
                 (input)="onFlightNumberInput($event)"
                 (blur)="onFlightNumberBlur()"
                 [class.input-invalid]="flightForm.get('flightNumber')?.invalid && (flightForm.get('flightNumber')?.touched || flightForm.get('flightNumber')?.dirty)"
+                [attr.aria-invalid]="flightForm.get('flightNumber')?.invalid && (flightForm.get('flightNumber')?.touched || flightForm.get('flightNumber')?.dirty)"
+                [attr.aria-describedby]="flightForm.get('flightNumber')?.invalid && (flightForm.get('flightNumber')?.touched || flightForm.get('flightNumber')?.dirty) ? 'flightNumber-error' : null"
               />
               @if (flightForm.get('flightNumber')?.invalid && (flightForm.get('flightNumber')?.touched || flightForm.get('flightNumber')?.dirty)) {
-                <span class="field-error" data-testid="flightNumber-error">
+                <span id="flightNumber-error" role="alert" aria-live="polite" class="field-error" data-testid="flightNumber-error">
                   @if (flightForm.get('flightNumber')?.errors?.['required']) {
                     Flight number is required.
                   } @else if (flightForm.get('flightNumber')?.errors?.['pattern'] || flightForm.get('flightNumber')?.errors?.['maxlength']) {
@@ -115,6 +119,8 @@
                   [min]="todayDateString"
                   formControlName="arrivalDate"
                   [class.input-invalid]="flightForm.get('arrivalDate')?.invalid && (flightForm.get('arrivalDate')?.touched || flightForm.get('arrivalDate')?.dirty)"
+                  [attr.aria-invalid]="flightForm.get('arrivalDate')?.invalid && (flightForm.get('arrivalDate')?.touched || flightForm.get('arrivalDate')?.dirty)"
+                  [attr.aria-describedby]="flightForm.get('arrivalDate')?.invalid && (flightForm.get('arrivalDate')?.touched || flightForm.get('arrivalDate')?.dirty) ? 'arrivalDate-error' : null"
                 />
                 <button
                   type="button"
@@ -132,7 +138,7 @@
                 </button>
               </div>
               @if (flightForm.get('arrivalDate')?.invalid && (flightForm.get('arrivalDate')?.touched || flightForm.get('arrivalDate')?.dirty)) {
-                <span class="field-error" data-testid="arrivalDate-error">
+                <span id="arrivalDate-error" role="alert" aria-live="polite" class="field-error" data-testid="arrivalDate-error">
                   @if (flightForm.get('arrivalDate')?.errors?.['required']) {
                     Arrival date is required.
                   } @else if (flightForm.get('arrivalDate')?.errors?.['pastDate']) {
@@ -152,6 +158,8 @@
                   type="time"
                   formControlName="arrivalTime"
                   [class.input-invalid]="flightForm.get('arrivalTime')?.invalid && (flightForm.get('arrivalTime')?.touched || flightForm.get('arrivalTime')?.dirty)"
+                  [attr.aria-invalid]="flightForm.get('arrivalTime')?.invalid && (flightForm.get('arrivalTime')?.touched || flightForm.get('arrivalTime')?.dirty)"
+                  [attr.aria-describedby]="flightForm.get('arrivalTime')?.invalid && (flightForm.get('arrivalTime')?.touched || flightForm.get('arrivalTime')?.dirty) ? 'arrivalTime-error' : null"
                 />
                 <button
                   type="button"
@@ -167,7 +175,7 @@
                 </button>
               </div>
               @if (flightForm.get('arrivalTime')?.invalid && (flightForm.get('arrivalTime')?.touched || flightForm.get('arrivalTime')?.dirty)) {
-                <span class="field-error" data-testid="arrivalTime-error">
+                <span id="arrivalTime-error" role="alert" aria-live="polite" class="field-error" data-testid="arrivalTime-error">
                   @if (flightForm.get('arrivalTime')?.errors?.['required']) {
                     Arrival time is required.
                   } @else if (flightForm.get('arrivalTime')?.errors?.['pastTime']) {
@@ -196,9 +204,11 @@
               (paste)="onGuestsPaste($event)"
               (input)="onGuestsInput($event)"
               [class.input-invalid]="flightForm.get('numOfGuests')?.invalid && (flightForm.get('numOfGuests')?.touched || flightForm.get('numOfGuests')?.dirty)"
+              [attr.aria-invalid]="flightForm.get('numOfGuests')?.invalid && (flightForm.get('numOfGuests')?.touched || flightForm.get('numOfGuests')?.dirty)"
+              [attr.aria-describedby]="flightForm.get('numOfGuests')?.invalid && (flightForm.get('numOfGuests')?.touched || flightForm.get('numOfGuests')?.dirty) ? 'numOfGuests-error' : null"
             />
             @if (flightForm.get('numOfGuests')?.invalid && (flightForm.get('numOfGuests')?.touched || flightForm.get('numOfGuests')?.dirty)) {
-              <span class="field-error" data-testid="numOfGuests-error">
+              <span id="numOfGuests-error" role="alert" aria-live="polite" class="field-error" data-testid="numOfGuests-error">
                 @if (flightForm.get('numOfGuests')?.errors?.['required']) {
                   Number of guests is required.
                 } @else if (flightForm.get('numOfGuests')?.errors?.['min'] || flightForm.get('numOfGuests')?.errors?.['max'] || flightForm.get('numOfGuests')?.errors?.['pattern'] || flightForm.get('numOfGuests')?.errors?.['step']) {

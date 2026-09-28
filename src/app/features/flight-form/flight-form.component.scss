@@ -12,12 +12,22 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   padding: 1rem 1.5rem;
 
+  @media (max-width: 480px) {
+    padding: 0.75rem 1rem;
+  }
+
   .header-content {
     max-width: 1000px;
     margin: 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: center;
+
+    @media (max-width: 480px) {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
   }
 
   .brand {
@@ -42,9 +52,23 @@
     align-items: center;
     gap: 1rem;
 
+    @media (max-width: 480px) {
+      width: 100%;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
     .user-email {
       font-size: 0.875rem;
       color: #94a3b8;
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+
+      @media (max-width: 360px) {
+        max-width: 140px;
+      }
     }
 
     .btn-signout {
@@ -71,6 +95,10 @@
   justify-content: center;
   align-items: flex-start;
   padding: 2.5rem 1.25rem;
+
+  @media (max-width: 480px) {
+    padding: 1.25rem 0.75rem;
+  }
 }
 
 .form-card,
@@ -83,6 +111,10 @@
   border-radius: 1rem;
   padding: 2.25rem;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+
+  @media (max-width: 480px) {
+    padding: 1.5rem 1.125rem;
+  }
 }
 
 .card-header {
